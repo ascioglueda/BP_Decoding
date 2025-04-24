@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Apr 18, 2025
+@author: Eda Aşçıoğlu
+LT Kodlama + Belief Propagation Simülasyonu
+"""
+
 import random
 import numpy as np
 from source import DawnSimVis
@@ -6,7 +13,7 @@ from source import DawnSimVis
 k = 1000  # Orijinal veri boyutu
 n = 2500  # Kodlanmış sembol sayısı
 SOURCE = 0  # Kaynak düğüm
-#REQUESTING_NODE = 1  # Talep eden düğüm
+REQUESTING_NODE = 1  # Talep eden düğüm
 
 # Orijinal veri
 original_data = np.random.randint(0, 2, k, dtype=np.uint8)
@@ -20,14 +27,13 @@ def soliton_distribution(k, delta=0.5):
     probabilities /= probabilities.sum()  # Normalizasyon
     return probabilities
 
-#Üretilen olasılıklar daha sonra kodlama aşamasında kullanılır.
 probabilities = soliton_distribution(k)
 
-''' def encode_lt_from_root(data, n, probabilities):
+def encode_lt_from_root(data, n, probabilities):
     nodes = []
     for _ in range(n):
-        # Derecesi 1 sembol olasiligini artir (yapiyi bozmadan)
-        if random.random() < 0.2:  # %20 olasilikta derecesi-1
+        # Derecesi-1 sembol olasılığını artır (yapıyı bozmadan)
+        if random.random() < 0.2:  # %20 olasılıkla derecesi-1
             degree = 1
         else:
             degree = np.random.choice(np.arange(1, k + 1), p=probabilities)
@@ -36,88 +42,66 @@ probabilities = soliton_distribution(k)
         for idx in selected_indices[1:]:
             encoded_symbol ^= data[idx]  # XOR işlemi
         nodes.append((selected_indices, encoded_symbol))
-    return nodes   '''
+    return nodes
 
-
-def encode_lt_from_root(data, n, probabilities):
-    nodes = []
-    for _ in range(n):
-        degree = np.random.choice(np.arange(1, k + 1), p=probabilities)
-
-        #selected_indices: Hangi orijinal sembollerin XOR'landigini gosteriyor
-        selected_indices = random.sample(range(k), min(degree, k))
-
-        #encoded_symbol: XOR işleminin sonuç
-        encoded_symbol = data[selected_indices[0]]
-        for idx in selected_indices[1:]:
-            encoded_symbol ^= data[idx]  # XOR işlemi
-        nodes.append((selected_indices, encoded_symbol))
-    return nodes 
-
-def decode_lt_distributed(requesting_node_id, nodes, k):
+def decode_lt_distributed(requesting_node_id, received_data, k):
+    """Belief Propagation ile decode."""
     print(f"\ndugum {requesting_node_id} decode icin request mesaji gonderiyor...")
-    #received_data,Gelen sembollerin kopyasi
-    received_data = [(list(indices), value) for indices, value in nodes]  # Deep copy
-    #known_values,Henüz cozulmeyen semboller. Basta hepsi bilinmeyen
     known_values = np.full(k, -1, dtype=np.int8)
-    #symbol_queue, Sadece derecesi 1 olan semboller buraya alınır
     symbol_queue = []
+    processed_nodes = set()
+
+    # Derecesi 1 olanları bul
     print("\nDerecesi 1 olan dugumler:")
+    initial_degree_one = []
     for node_id, (indices, value) in enumerate(received_data):
         if len(indices) == 1:
             print(f"dugum {node_id}: XOR({indices}) -> {value}")
             symbol_queue.append((node_id, indices[0], value))
+            initial_degree_one.append(node_id)
 
-
-    #Süreçte ortaya çıkan yeni derecesi 1 semboller.
-    new_degree_one_symbols = []
+    iteration = 0
+    new_degree_one_symbols = []  # Yeni derecesi-1 sembolleri takip etmek için
     while symbol_queue:
+        iteration += 1
         node_id, symbol_idx, value = symbol_queue.pop(0)
-        if known_values[symbol_idx] != -1:
-            continue  # Zaten biliniyorsa atla
-        known_values[symbol_idx] = value
-        for other_node_id, (indices, val) in enumerate(received_data):
-            if indices is None or symbol_idx not in indices:
-                continue
-            # Yeni liste oluştur, orijinali değiştirme
-            new_indices = [i for i in indices if i != symbol_idx]
-            new_val = val ^ value
-            received_data[other_node_id] = (new_indices, new_val)
-            if len(new_indices) == 1 and known_values[new_indices[0]] == -1:
-                print(f"    Yeni derecesi 1: Düğüm {other_node_id} -> v{new_indices[0]} = {new_val}")
-                symbol_queue.append((other_node_id, new_indices[0], new_val))
-                new_degree_one_symbols.append((other_node_id, new_indices[0], new_val))
-            elif len(new_indices) == 0:
-                received_data[other_node_id] = (None, None)
+        if known_values[symbol_idx] == -1:
+            known_values[symbol_idx] = value
+            processed_nodes.add(node_id)
+            for other_node_id, packet in enumerate(received_data):
+                if packet is None or other_node_id == node_id or other_node_id in processed_nodes:
+                    continue
+                indices, val = packet
+                if symbol_idx in indices:
+                    indices.remove(symbol_idx)
+                    val ^= value
+                    received_data[other_node_id] = (indices, val)
+                    if len(indices) == 1:
+                        print(f"    Yeni derecesi 1: Düğüm {other_node_id} -> v{indices[0]} = {val}")
+                        symbol_queue.append((other_node_id, indices[0], val))
+                        new_degree_one_symbols.append((other_node_id, indices[0], val))
+                    elif len(indices) == 0:
+                        received_data[other_node_id] = None
+
+    solved_count = np.sum(known_values != -1)
+    unsolved_count = np.sum(known_values == -1)
+    print(f"\nÇözülen sembol sayısı: {solved_count}")
+    print(f"Çözülemeyen sembol sayısı: {unsolved_count}")
+
     return known_values, new_degree_one_symbols
 
-###########################################################
-with open("lt_decoding_output.txt", "w", encoding="utf-8") as f:
-    def write_and_print(text):
-        print(text)
-        f.write(text + "\n")
+print("Root (0) düğümden kodlama ve dagitim yapiliyor...")
+nodes = encode_lt_from_root(original_data, n, probabilities)
+print("\nEncode edilmis veriler:")
+for i, (indices, value) in enumerate(nodes):
+    print(f"Dugum {i} = XOR({indices}) -> {value}")
+requesting_node_id = 5
+recovered_data, _ = decode_lt_distributed(requesting_node_id, list(nodes), k) # nodes kopyalandı
+print("basari orani:", np.mean(recovered_data == original_data))
+if np.array_equal(original_data, recovered_data):
+    print("Tum veri basariyla cozuldu!")
 
-    write_and_print("Root (0) düğümden kodlama ve dagitim yapiliyor...")
-    nodes = encode_lt_from_root(original_data, n, probabilities)
-    write_and_print(f"\n{n} adet sembol encode edildi. Örnek bir sembol: Düğüm 0 = XOR({nodes[0][0]}) -> {nodes[0][1]}")
-
-    requesting_node_id = 5
-    recovered_data, new_symbols = decode_lt_distributed(requesting_node_id, nodes, k)
-
-    write_and_print("\nÇözülen Semboller (Indeks ve Değer):")
-    solved_indices = np.where(recovered_data != -1)[0]
-    for idx in solved_indices:
-        write_and_print(f"Sembol {idx}: {recovered_data[idx]} (Orijinal: {original_data[idx]})")
-
-    write_and_print("\nÇözülemeyen Semboller (Indeksler):")
-    unsolved_indices = np.where(recovered_data == -1)[0]
-    if len(unsolved_indices) > 0:
-        write_and_print(f"Toplam {len(unsolved_indices)} sembol çözülemedi: {unsolved_indices}")
-    else:
-        write_and_print("Tüm semboller çözüldü!")
-
-###########################################################
-''' def generate_random_graph(n, p=0.02):
+def generate_random_graph(n, p=0.02):
     """Rasgele graf oluştur."""
     adj_list = {i: [] for i in range(n)}
     for i in range(n):
@@ -126,17 +110,17 @@ with open("lt_decoding_output.txt", "w", encoding="utf-8") as f:
                 adj_list[i].append(j)
                 adj_list[j].append(i)
     return adj_list
- '''
-############################################################
+
+###########################################################
 class Node(DawnSimVis.BaseNode):
     def init(self):
         self.received_packets = []
-        self.known_values = np.full(k, -1, dtype=np.int8)  # Tüm düğümler decode yapabilir
+        self.known_values = np.full(k, -1, dtype=np.int8)  # Tüm düğümler dekodlama yapabilir
         self.decoded = False
         self.sent_packet = False
         self.probabilities = probabilities
         self.data = original_data if self.id == SOURCE else None
-        self.nodes = []  # encode_lt_from_root için sembol listesi
+        self.nodes_to_send = []  # encode_lt_from_root için sembol listesi
         self.forwarded_packets = set()  # Aynı paketin tekrar gönderilmesini önlemek için
         self.is_green = False  # Düğümün yeşil olup olmadığını takip etmek için
         # Renk ayarları
@@ -148,7 +132,7 @@ class Node(DawnSimVis.BaseNode):
     def run(self):
         if self.id == SOURCE:
             # Kaynak düğüm, encode_lt_from_root ile sembolleri hazırlar
-            self.nodes = encode_lt_from_root(self.data, n, self.probabilities)
+            self.nodes_to_send = encode_lt_from_root(self.data, n, self.probabilities)
             self.encode_and_send()
         # Tüm düğümler dekodlama yapabilir
         self.set_timer(10, self.decode)
@@ -156,12 +140,10 @@ class Node(DawnSimVis.BaseNode):
         if self.id != SOURCE:
             self.set_timer(random.uniform(1, 5), self.forward_packets)
 
-
-    # kaynak düğümün kodlanmış sembolleri rasgele seçip ağa gönderir
     def encode_and_send(self):
-        if self.nodes:
-            node_idx = random.randint(0, len(self.nodes) - 1)
-            indices, value = self.nodes[node_idx]
+        if self.nodes_to_send:
+            node_idx = random.randint(0, len(self.nodes_to_send) - 1)
+            indices, value = self.nodes_to_send.pop(node_idx)
             pck = {'indices': indices, 'value': value}
             self.send(DawnSimVis.BROADCAST_ADDR, pck)
             self.log(f'Sent LT-coded symbol: XOR({indices[:5]}...) -> {value}')
@@ -175,6 +157,7 @@ class Node(DawnSimVis.BaseNode):
         if packet_key not in self.forwarded_packets:
             self.received_packets.append((indices, value))
             self.log(f'Received packet: XOR({indices[:5]}...) -> {value}')
+            # Derecesi-1 sembol alındığında yeşile dön
             if len(indices) == 1 and not self.is_green and self.id != SOURCE:
                 self.change_color(0, 1, 0)  # Yeşil
                 self.is_green = True
@@ -198,7 +181,9 @@ class Node(DawnSimVis.BaseNode):
             return
         self.log('Starting belief propagation decoding...')
         # decode_lt_distributed ile dekodlama, yeni derecesi-1 sembolleri de döndürür
-        self.known_values, new_degree_one_symbols = decode_lt_distributed(self.id, self.received_packets, k)
+        recovered_data, new_degree_one_symbols = decode_lt_distributed(self.id, list(self.received_packets), k)
+        self.known_values = recovered_data
+
         # Yeni derecesi-1 semboller bulunduğunda yeşile dön (eğer daha önce yeşile dönmediyse)
         for node_id, symbol_idx, value in new_degree_one_symbols:
             if not self.is_green and self.id != SOURCE:
@@ -206,39 +191,35 @@ class Node(DawnSimVis.BaseNode):
                 self.is_green = True
                 self.log(f'Node {self.id} turned green due to new degree-1 symbol: v{symbol_idx} = {value}')
 
-        # Başarı oranı ve çözülemeyen sembol sayısı
-        #success_rate = np.mean(self.known_values == original_data)
-           
-        #self.log(f'Decoding complete. Success rate: {success_rate:.2f}, Unsolved: {unsolved}')
-
-        #if np.array_equal(self.known_values, original_data):
-                #self.log('All data successfully decoded!')
-                #self.decoded = True
-                #self.change_color(0, 0, 1)  # Mavi: tamamen çözüldü
-                #if self.id == REQUESTING_NODE:
-                    #self.log('Simülasyon basarili bir sekilde tamamlandi!')
-                    #sim.stop()
-        #else:
-            #self.log('Retrying decoding...')
-            #self.set_timer(2, self.decode)
-
+        success_rate = np.mean(self.known_values == original_data)
+        unsolved = np.sum(self.known_values == -1)
+        self.log(f'Decoding complete. Success rate: {success_rate:.2f}, Unsolved: {unsolved}')
+        if np.array_equal(self.known_values, original_data):
+            self.log('All data successfully decoded!')
+            self.decoded = True
+            if self.id == REQUESTING_NODE:
+                self.log('Simülasyon basarili bir sekilde tamamlandi!')
+                sim.stop()
+        else:
+            self.log('Retrying decoding...')
+            self.set_timer(2, self.decode)
 
     def finish(self):
-        #if self.id == REQUESTING_NODE:
-        if self.decoded:
+        if self.id == REQUESTING_NODE:
+            if self.decoded:
                 self.log(f'Simülasyon basariyla tamamlandi. Basari orani: {np.mean(self.known_values == original_data):.2f}')
-        else:
-                self.log(f'Simülasyon tamamlandi, ancak tum veri cozulemedi. Cozulemeyen semboller: {np.sum(self.known_values == 1)}')
-        #elif self.received_packets:
-            #self.log(f'Dugum {self.id} toplam {len(self.received_packets)} paket aldi.')
+            else:
+                self.log(f'Simülasyon tamamlandi, ancak tum veri cozulemedi. Cozulemeyen semboller: {np.sum(self.known_values == -1)}')
+        elif self.received_packets:
+            self.log(f'Dugum {self.id} toplam {len(self.received_packets)} paket aldi.')
 
 ###########################################################
 def create_network():
     # Place nodes in a 10x10 grid
     for x in range(10):
         for y in range(10):
-            px = 50 + x * 60 + random.uniform(-10, 10)
-            py = 50 + y * 60 + random.uniform(-10, 10)
+            px = 50 + x * 60 + random.uniform(-20, 20)
+            py = 50 + y * 60 + random.uniform(-20, 20)
             sim.add_node(Node, pos=(px, py), tx_range=75)
 
 # Simülasyon ayarları
