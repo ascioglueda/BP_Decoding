@@ -161,7 +161,7 @@ class Node(DawnSimVis.BaseNode):
     def encode_and_send(self):
         if self.nodes:
             node_idx = random.randint(0, len(self.nodes) - 1)
-            indices, value = self.nodes[node_idx]
+            indices, value = self.nodes[node_idx] 
             pck = {'indices': indices, 'value': value}
             self.send(DawnSimVis.BROADCAST_ADDR, pck)
             self.log(f'Sent LT-coded symbol: XOR({indices[:5]}...) -> {value}')
@@ -237,8 +237,8 @@ def create_network():
     # Place nodes in a 10x10 grid
     for x in range(10):
         for y in range(10):
-            px = 50 + x * 60 + random.uniform(-10, 10)
-            py = 50 + y * 60 + random.uniform(-10, 10)
+            px = 50 + x * 60 + random.uniform(-20, 20)
+            py = 50 + y * 60 + random.uniform(-20, 20)
             sim.add_node(Node, pos=(px, py), tx_range=75)
 
 # Simülasyon ayarları

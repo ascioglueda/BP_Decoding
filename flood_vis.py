@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Mar 11 12:48:35 2025
-
-@author: EDA AŞÇIOĞLU
-"""
 import random
 import sys
 sys.path.insert(1, '.')
