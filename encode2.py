@@ -8,7 +8,7 @@ SOURCE = 0
 k = 1000  # Orijinal veri boyutu
 n = 2500  # Düğüm sayısı
 
-# Veri oluşturma (0 ve 1'lerden oluşan)
+# Veri oluşturma (0 ve 1'lerden oluşan bit dizisi)
 data = np.random.randint(0, 2, k, dtype=np.uint8)
 
 # Robust Soliton dağılımı
@@ -24,7 +24,7 @@ def encode_lt(data, probabilities):
     degree = np.random.choice(np.arange(1, k + 1), p=probabilities)
     selected_indices = random.sample(range(k), min(degree, k))
     encoded_symbol = data[selected_indices[0]]
-    for idx in selected_indices[1:]:
+    for idx in selected_indices[1:]: #ilk veriyi aliyoruz
         encoded_symbol ^= data[idx]  # XOR işlemi
     return selected_indices, encoded_symbol
 
@@ -32,11 +32,12 @@ class Node(DawnSimVis.BaseNode):
 
     def __init__(self, simulator, node_id, pos, tx_range):
         super().__init__(simulator, node_id, pos, tx_range)
-        self.msg_received = False #mesaj aldi mi almadi mi
+        self.msg_received = False #mesaj alindi mi alinmadi mi
         self.parent = None 
-        self.visited = False #daha once ziyaret edildi mi
-        self.selected_indices = None #encode edilen veriler
+        self.visited = False #dugum daha once ziyaret edildi mi
+        self.selected_indices = None #encode edilen verilerin indeksleri
         self.encoded_symbol = None #hangi degerler xorlanmis
+        self.received_packets =[] #gelen tum encode verileri saklamak icin liste
 
     def run(self):
         if self.id == SOURCE:
@@ -44,32 +45,41 @@ class Node(DawnSimVis.BaseNode):
             probabilities = soliton_distribution(k)
             self.selected_indices, self.encoded_symbol = encode_lt(data, probabilities)
             self.log(f'Node {self.id} encoded: value = {self.selected_indices}')
-            pck = {'type': 'encoded', 'sender': self.id, 'indices': self.encoded_symbol}
+            pck = {'type': 'encoded', 'sender': self.id, 'indices':(self.selected_indices, self.encoded_symbol)}
             self.send(DawnSimVis.BROADCAST_ADDR, pck)
             self.msg_received = True
             self.visited = True
 
+    #self.id gonderen kim
     def on_receive(self, pck):
-        if pck['type'] == 'encoded' and not self.visited:
-            self.parent = pck['sender']
-            self.selected_indices = pck['indices']
+        if pck['type'] == 'encoded':
+            # Gelen pakette hem göndereni hem veriyi kaydet
+            sender = pck['sender']
+            indices = pck['indices']
+            self.received_packets.append((sender, indices))
 
-            self.visited = True
-            self.change_color(0, 0, 1)  # Mesaj alındığında mavi renk
-            self.log(f'Node {self.id} paketi aldi: indices = {self.selected_indices}')
+            if not self.visited:
+                self.parent = sender
+                self.selected_indices, self.encoded_symbol = indices
 
-            # Yeni bir encode işlemi yap
-            probabilities = soliton_distribution(k)
-            new_indices = encode_lt(data, probabilities)
-            self.encoded_symbol = new_indices
-            
-            # Mesajı 1 saniye gecikmeyle gönder
-            new_pck = {'type': 'encoded', 'sender': self.id, 'indices': new_indices}
-            self.set_timer(1, self.cb_msg_send, new_pck)
+                self.visited = True
+                self.change_color(0, 0, 1)  # Mesaj alındığında mavi renk
+                self.log(f'Node {self.id} paketi {sender} dugumden aldi: indices = {self.selected_indices}')
 
+                # Yeni bir encode işlemi yap
+                probabilities = soliton_distribution(k)
+                new_indices = encode_lt(data, probabilities)
+                self.selected_indices, self.encoded_symbol = new_indices
+
+                # Mesajı 1 saniye gecikmeyle gonder
+                new_pck = {'type': 'encoded', 'sender': self.id, 'indices': new_indices}
+                self.set_timer(1, self.cb_msg_send, new_pck)
+            #else:
+                #self.log(f'Node {self.id} ekstra paket aldı: gönderen = {sender}, indices = {indices[0]}')
+                
     def cb_msg_send(self, pck):
         self.send(DawnSimVis.BROADCAST_ADDR, pck)
-        self.change_color(0, 1, 0)  # Mesaj gönderildikten sonra yeşil
+        self.change_color(0, 1, 0)  # Mesaj gonderildikten sonra yesil
         self.log(f'Mesaj gönderildi: {self.id}')
 
     def finish(self):
