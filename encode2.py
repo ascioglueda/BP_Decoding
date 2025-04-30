@@ -24,19 +24,21 @@ def encode_lt(data, probabilities):
     degree = np.random.choice(np.arange(1, k + 1), p=probabilities)
     selected_indices = random.sample(range(k), min(degree, k))
     encoded_symbol = data[selected_indices[0]]
-    for idx in selected_indices[1:]: #ilk veriyi aliyoruz
-        encoded_symbol ^= data[idx]  # XOR işlemi
+    for i in selected_indices[1:]: #ilk veriyi aliyoruz
+        encoded_symbol ^= data[i]  # XOR işlemi
     return selected_indices, encoded_symbol
+
 
 class Node(DawnSimVis.BaseNode):
 
     def __init__(self, simulator, node_id, pos, tx_range):
         super().__init__(simulator, node_id, pos, tx_range)
         self.msg_received = False #mesaj alindi mi alinmadi mi
-        self.parent = None 
+        self.parent = None
+        self.children = [] 
         self.visited = False #dugum daha once ziyaret edildi mi
-        self.selected_indices = None #encode edilen verilerin indeksleri
-        self.encoded_symbol = None #hangi degerler xorlanmis
+        self.selected_indices = None # k degerlerini tutar (orijinal veri) indekslerini tutar.[4, 15, 300]
+        self.encoded_symbol = None #selected_indices hangi degerleri xorlanmis
         self.received_packets =[] #gelen tum encode verileri saklamak icin liste
 
     def run(self):
@@ -49,31 +51,36 @@ class Node(DawnSimVis.BaseNode):
             self.send(DawnSimVis.BROADCAST_ADDR, pck)
             self.msg_received = True
             self.visited = True
-
+        
     #self.id gonderen kim
     def on_receive(self, pck):
         if pck['type'] == 'encoded':
             # Gelen pakette hem göndereni hem veriyi kaydet
-            sender = pck['sender']
-            indices = pck['indices']
-            self.received_packets.append((sender, indices))
+            if pck['type'] == 'encoded':
+                self.received_packets.append((pck['sender'], pck['indices']))
 
             if not self.visited:
-                self.parent = sender
-                self.selected_indices, self.encoded_symbol = indices
+                self.parent = pck['sender']
+                self.selected_indices, self.encoded_symbol =pck['indices']
 
                 self.visited = True
                 self.change_color(0, 0, 1)  # Mesaj alındığında mavi renk
-                self.log(f'Node {self.id} paketi {sender} dugumden aldi: indices = {self.selected_indices}')
+                self.log(f'Node {self.id} paketi {self.parent}. dugumden aldi: indices = {self.selected_indices}')
 
+                # Ebeveyne çocuk olarak kendini ekle
+                parent_node = self.sim.nodes[self.parent]
+                if parent_node:
+                    parent_node.children.append(self.id)
+                
                 # Yeni bir encode işlemi yap
                 probabilities = soliton_distribution(k)
-                new_indices = encode_lt(data, probabilities)
-                self.selected_indices, self.encoded_symbol = new_indices
+                self.selected_indices, self.encoded_symbol = encode_lt(data, probabilities)
 
-                # Mesajı 1 saniye gecikmeyle gonder
-                new_pck = {'type': 'encoded', 'sender': self.id, 'indices': new_indices}
-                self.set_timer(1, self.cb_msg_send, new_pck)
+                self.set_timer(1, self.cb_msg_send, {
+                    'type': 'encoded',
+                    'sender': self.id,
+                    'indices': (self.selected_indices, self.encoded_symbol)
+                })
             #else:
                 #self.log(f'Node {self.id} ekstra paket aldı: gönderen = {sender}, indices = {indices[0]}')
                 
@@ -83,7 +90,14 @@ class Node(DawnSimVis.BaseNode):
         self.log(f'Mesaj gönderildi: {self.id}')
 
     def finish(self):
-        pass
+        if self.parent is not None:
+            self.log(f'Node {self.id} -> parent = {self.parent}')
+        if self.children:
+            self.log(f'Node {self.id} -> Children: {self.children}')
+        #if self.id == SOURCE:
+            # Simülasyonun sonunda, çözüm sonuçlarını yazdırabiliriz
+            #print(f'Final Decoded Data at Node {self.id}: {self.selected_indices}')    ""
+
 
 def create_network():
     for x in range(10):
