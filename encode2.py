@@ -28,6 +28,46 @@ def encode_lt(data, probabilities):
         encoded_symbol ^= data[i]  # XOR işlemi
     return selected_indices, encoded_symbol
 
+def decode_lt_distributed(requesting_node_id, nodes, k):
+    """Belief Propagation ile decode."""
+    print(f"\ndugum {requesting_node_id} decode icin request mesaji gonderiyor...")
+    received_data = nodes.copy()
+    known_values = np.full(k, -1, dtype=np.int8)
+    symbol_queue = []
+
+    # Derecesi 1 olanları bul
+    print("\nDerecesi 1 olan dugumler:")
+    for node_id, (indices, value) in enumerate(received_data):
+        if len(indices) == 1:
+            print(f"dugum {node_id}: XOR({indices}) -> {value}")
+            symbol_queue.append((node_id, indices[0], value))
+
+    iteration = 0
+    while symbol_queue:
+        iteration += 1
+        #print(f"\nIterasyon {iteration}:")
+        node_id, symbol_idx, value = symbol_queue.pop(0)
+        if known_values[symbol_idx] == -1:
+            known_values[symbol_idx] = value
+            #print(f" Cozulen: v{symbol_idx} = {value} (Dugum {node_id})")
+        for other_node_id, packet in enumerate(received_data):
+            if packet is None:
+                continue
+            indices, val = packet
+            if symbol_idx in indices:
+                indices.remove(symbol_idx)
+                val ^= value
+                received_data[other_node_id] = (indices, val)
+                #print(f"  Güncellenen Düğüm {other_node_id}: XOR({indices}) -> {val}")
+                if len(indices) == 1:
+                    print(f"    Yeni derecesi 1: Düğüm {other_node_id} -> v{indices[0]} = {val}")
+                    symbol_queue.append((other_node_id, indices[0], val))
+                elif len(indices) == 0:
+                    #print(f"    Derece 0: Düğüm {other_node_id} silindi")
+                    received_data[other_node_id] = None
+
+    #print(f"\nToplam {iteration} iterasyon yapildi.")
+    return known_values
 
 class Node(DawnSimVis.BaseNode):
 
