@@ -30,43 +30,64 @@ def encode_lt(data, probabilities):
 
 def decode_lt_distributed(requesting_node_id, nodes, k):
     """Belief Propagation ile decode."""
-    print(f"\ndugum {requesting_node_id} decode icin request mesaji gonderiyor...")
-    received_data = nodes.copy()
-    known_values = np.full(k, -1, dtype=np.int8)
-    symbol_queue = []
+    print(f"\nDüğüm {requesting_node_id} decode için request mesajı gönderiyor...")
+    received_data = nodes.copy()  # Gelen veriler (düğümler)
+    known_values = np.full(k, -1, dtype=np.int8)  # Bilinen değerleri tutacak
+    symbol_queue = []  # Çözüme ulaşmış düğümleri tutan kuyruk
+
+    # Received data içeriğini yazdır
+    print("Received Data İçeriği:")
+    for node_id, packet in enumerate(received_data):
+        if packet is not None:
+            indices, value = packet
+            print(f"Düğüm {node_id}: indices = {indices}, value = {value}")
 
     # Derecesi 1 olanları bul
-    print("\nDerecesi 1 olan dugumler:")
+    print("\nDerecesi 1 olan düğümler:")
+    degree_one_count = 0
     for node_id, (indices, value) in enumerate(received_data):
-        if len(indices) == 1:
-            print(f"dugum {node_id}: XOR({indices}) -> {value}")
+        if len(indices) == 1:  # Derecesi 1 olan düğümü bul
+            degree_one_count += 1
+            print(f"Düğüm {node_id}: XOR(indices={indices[0]}) = {value}")
             symbol_queue.append((node_id, indices[0], value))
+    print(f"Toplam derecesi 1 olan düğüm sayısı: {degree_one_count}")
 
     iteration = 0
     while symbol_queue:
         iteration += 1
-        #print(f"\nIterasyon {iteration}:")
-        node_id, symbol_idx, value = symbol_queue.pop(0)
-        if known_values[symbol_idx] == -1:
-            known_values[symbol_idx] = value
-            #print(f" Cozulen: v{symbol_idx} = {value} (Dugum {node_id})")
+        node_id, symbol_idx, value = symbol_queue.pop(0)  # Kuyruktan bir düğüm çek
+        if known_values[symbol_idx] == -1:  # Henüz çözülmemişse
+            known_values[symbol_idx] = value  # Çözümü kaydet
+        
+        # Diğer düğümleri güncelle
         for other_node_id, packet in enumerate(received_data):
-            if packet is None:
+            if packet is None:  # Eğer veri yoksa atla
                 continue
             indices, val = packet
-            if symbol_idx in indices:
-                indices.remove(symbol_idx)
-                val ^= value
-                received_data[other_node_id] = (indices, val)
-                #print(f"  Güncellenen Düğüm {other_node_id}: XOR({indices}) -> {val}")
-                if len(indices) == 1:
-                    print(f"    Yeni derecesi 1: Düğüm {other_node_id} -> v{indices[0]} = {val}")
+            if symbol_idx in indices:  # Eğer bu sembol bu düğümde varsa
+                indices.remove(symbol_idx)  # İndeksi kaldır
+                val ^= value  # XOR işlemi yap
+                received_data[other_node_id] = (indices, val)  # Yeni veri
+                if len(indices) == 1:  # Eğer derecesi 1'e düştüyse
                     symbol_queue.append((other_node_id, indices[0], val))
-                elif len(indices) == 0:
-                    #print(f"    Derece 0: Düğüm {other_node_id} silindi")
+                elif len(indices) == 0:  # Derece 0 olan düğüm silinir
                     received_data[other_node_id] = None
 
-    #print(f"\nToplam {iteration} iterasyon yapildi.")
+    # Çözümleme sonuçlarını rapor et
+    unresolved_nodes = np.sum(known_values == -1)
+    resolved_nodes = k - unresolved_nodes
+    print(f"\nÇözümleme İstatistikleri:")
+    print(f"Toplam veri sayısı: {k}")
+    print(f"Çözülen veri sayısı: {resolved_nodes}")
+    print(f"Çözülemeyen veri sayısı: {unresolved_nodes}")
+    print(f"Çözümleme oranı: {resolved_nodes / k * 100:.2f}%")
+
+    if unresolved_nodes > 0:
+        print("Çözülemeyen düğümler var!")
+
+    # Çözümleme sonuçlarını yazdırma
+    print(f"Çözümlenen veriler (Node {requesting_node_id}): {known_values}")
+
     return known_values
 
 class Node(DawnSimVis.BaseNode):
@@ -134,10 +155,12 @@ class Node(DawnSimVis.BaseNode):
             self.log(f'Node {self.id} -> parent = {self.parent}')
         if self.children:
             self.log(f'Node {self.id} -> Children: {self.children}')
-        #if self.id == SOURCE:
-            # Simülasyonun sonunda, çözüm sonuçlarını yazdırabiliriz
-            #print(f'Final Decoded Data at Node {self.id}: {self.selected_indices}')    ""
-
+        if self.received_packets:
+            self.log(f'Node {self.id} -> Received Packets: {[(sender, indices[0]) for sender, indices in self.received_packets]}')
+        if self.id == SOURCE:
+            # Simülasyonun sonunda, çözüm sonuçlarını yazdır
+            decoded_data = decode_lt_distributed(self.id, [packet[1] for packet in self.received_packets], k)
+            print(f'Final Decoded Data at Node {self.id}: {decoded_data}')
 
 def create_network():
     for x in range(10):
