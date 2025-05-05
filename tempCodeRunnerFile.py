@@ -1,1 +1,2 @@
-received_packets
+
+class Node(DawnSimVis.BaseNode):
