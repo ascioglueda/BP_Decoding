@@ -1,2 +1,2 @@
 
-class Node(DawnSimVis.BaseNode):
+all_packets = []

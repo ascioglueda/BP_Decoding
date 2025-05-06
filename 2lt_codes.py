@@ -29,6 +29,7 @@ def encode_lt(data, probabilities):
     return selected_indices, encoded_symbol
 
 
+
 class Node(DawnSimVis.BaseNode):
 
     def __init__(self, simulator, node_id, pos, tx_range):
