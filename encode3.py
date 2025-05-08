@@ -5,14 +5,12 @@ import random
 import numpy as np
 from collections import defaultdict
 from scipy.special import expit
-import logging
-
-# Loglama ayarları
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from collections import defaultdict
+import numpy as np
 
 SOURCE = 0
-k = 1000  # Orijinal veri boyutu
-n = 1200   # Düğüm sayısı (10x10 ızgara için)
+k = 1000   #veri 
+n = 1200   #Dugum sayısı
 
 # Veri oluşturma
 data = np.random.randint(0, 2, k, dtype=np.uint8)
@@ -40,62 +38,50 @@ def encode_lt(data, probabilities):
         encoded_symbol ^= data[i]
     return selected_indices, encoded_symbol
 
-# Belief Propagation Decoder (LLR tabanlı)
-def belief_propagation_decode(received_packets, k, max_iter=200, llr_threshold=1e-6):
-    variable_nodes = defaultdict(list)
-    check_nodes = []
-    packet_set = set()
+# Belief Propagation Decode
+def decode_lt(received_packets, k):
+    known_values = np.full(k, -1, dtype=np.int8) #known_values icine bilinmeyenleri atiyoruz
+    symbol_queue = []
+    equations = received_packets.copy()#agdaki diger dugumlerden alinan kodlanmis paketlerin (encoded symbols) bir kopyasidir.
 
-    # Paketleri organize et ve tekrarları filtrele
-    for indices, value in received_packets:
-        indices_tuple = tuple(sorted(indices))
-        if (indices_tuple, value) not in packet_set:
-            packet_set.add((indices_tuple, value))
-            check_nodes.append((indices, value))
-            for idx in indices:
-                variable_nodes[idx].append(len(check_nodes) - 1)
+    # İlk tek bilinmeyenli denklemleri kuyrukla başlat
+    for node_id, (indices, value) in enumerate(equations):
+        if len(indices) == 1:
+            symbol_queue.append((node_id, indices[0], value))
 
-    if len(check_nodes) < k:
-        print(f"Yetersiz paket alındı: {len(check_nodes)}/{k}")
-    
-    llr_messages = {}
-    beliefs = np.zeros(k)
+    while symbol_queue:
+        node_id, index, value = symbol_queue.pop(0)
+        if known_values[index] != -1:
+            continue
+        known_values[index] = value
+        for other_node_id, (indices, val) in enumerate(equations):
+            if other_node_id == node_id:
+                continue
+            if index in indices:
+                indices.remove(index)
+                val ^= value
+                equations[other_node_id] = (indices, val)
+                #guncellenen tek bilinmeyenli ise kuyruga ekle
+                if len(indices) == 1:
+                    symbol_queue.append((other_node_id, indices[0], val))
 
-    for iteration in range(max_iter):
-        updated = False
+    # Bilinmeyenleri sıfır yap
+    result = np.zeros(k, dtype=np.uint8)
+    for i in range(k):
+        result[i] = known_values[i] if known_values[i] != -1 else 0
+    return result
 
-        # Check nodes -> Variable nodes
-        for check_id, (indices, value) in enumerate(check_nodes):
-            for target in indices:
-                llr_sum = sum(llr_messages.get((check_id, other), 0) for other in indices if other != target)
-                msg = value * np.tanh(llr_sum / 2) if llr_sum != 0 else value
-                llr_messages[(check_id, target)] = msg
-
-        # Variable nodes -> Update beliefs
-        for var_id in range(k):
-            llr_sum = sum(llr_messages.get((check_id, var_id), 0) for check_id in variable_nodes[var_id])
-            new_belief = llr_sum
-            if abs(new_belief - beliefs[var_id]) > llr_threshold:
-                updated = True
-            beliefs[var_id] = new_belief
-
-        if not updated:
-            print(f"İterasyon {iteration + 1}'de güncelleme durdu.")
-            break
-
-    decoded = np.where(beliefs > 0, 1, 0).astype(np.uint8)
-    return decoded
 # Node sınıfı
 class Node(DawnSimVis.BaseNode):
     def __init__(self, simulator, node_id, pos, tx_range):
         super().__init__(simulator, node_id, pos, tx_range)
         self.msg_received = False
         self.parent = None
-        self.children = []
-        self.visited = False
-        self.selected_indices = None
-        self.encoded_symbol = None
-        self.received_packets = []
+        self.children = [] 
+        self.visited = False #dugum daha once ziyaret edildi mi
+        self.selected_indices = None # k degerlerini tutar (orijinal veri) indekslerini tutar.[4, 15, 300]
+        self.encoded_symbol = None #selected_indices hangi degerleri xorlanmis
+        self.received_packets =[] #gelen tum encode verileri saklamak icin liste
 
     def run(self):
         if self.id == SOURCE:
@@ -117,7 +103,7 @@ class Node(DawnSimVis.BaseNode):
                 self.selected_indices, self.encoded_symbol = pck['indices']
                 self.visited = True
                 self.change_color(0, 0, 1)
-                self.log(f'Node {self.id} paketi {self.parent}. düğümden aldı: indices = {self.selected_indices}')
+                self.log(f'Node {self.id} paketi {self.parent}. düğümden aldi: indices = {self.selected_indices}')
 
                 parent_node = self.sim.nodes[self.parent]
                 if parent_node:
@@ -173,13 +159,13 @@ for node in sim.nodes:
             all_received_packets.append((indices, value))
 
 #decode_data icerisinde decode edilen veriler tutuluyor
-decoded_data = belief_propagation_decode(all_received_packets, k)
+decoded_data = decode_lt(all_received_packets, k)
 
-# Başarı kontrolü
 if np.array_equal(decoded_data, data):
-    print("\n✅ Başarıyla çözüldü!")
+    print("\nBasariyla cozuldu!")
 else:
-    print("\n❌ Veri tam çözülemedi.")
-    unsolved_bits = np.where(decoded_data != data)[0]
-    print(f"Çözülemeyen bitler (indeksler): {unsolved_bits}")
-    print(f"Çözülemeyen bit sayısı: {len(unsolved_bits)}")
+    #print("\n Veri tam cozulemedi.")
+    #unsolved_bits cozulmeyen indeksleri veriyor
+    unsolved_index = np.where(decoded_data != data)[0]
+    #print(f"Cozulemeyen bitler (indeksler): {unsolved_bits}")
+    print(f"Cozulemeyen bit sayisi: {len(unsolved_index)}")
