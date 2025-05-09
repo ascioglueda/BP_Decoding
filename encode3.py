@@ -5,12 +5,10 @@ import random
 import numpy as np
 from collections import defaultdict
 from scipy.special import expit
-from collections import defaultdict
-import numpy as np
 
 SOURCE = 0
-k = 1000   #veri 
-n = 1200   #Dugum sayısı
+k = 1000   # Veri boyutu
+n = 1200   # Düğüm sayısı
 
 # Veri oluşturma
 data = np.random.randint(0, 2, k, dtype=np.uint8)
@@ -70,18 +68,20 @@ def decode_lt(received_packets, k):
     for i in range(k):
         result[i] = known_values[i] if known_values[i] != -1 else 0
     return result
-
 # Node sınıfı
 class Node(DawnSimVis.BaseNode):
     def __init__(self, simulator, node_id, pos, tx_range):
         super().__init__(simulator, node_id, pos, tx_range)
         self.msg_received = False
         self.parent = None
-        self.children = [] 
+        self.children = []
         self.visited = False #dugum daha once ziyaret edildi mi
         self.selected_indices = None # k degerlerini tutar (orijinal veri) indekslerini tutar.[4, 15, 300]
         self.encoded_symbol = None #selected_indices hangi degerleri xorlanmis
         self.received_packets =[] #gelen tum encode verileri saklamak icin liste
+        self.probed = False
+        self.probe_acks = {}  # Hangi düğümlerden ACK alındığını takip eder
+        self.probe_rejects = {}  # Hangi düğümlerden REJECT alındığını takip eder
 
     def run(self):
         if self.id == SOURCE:
@@ -93,17 +93,39 @@ class Node(DawnSimVis.BaseNode):
             self.send(DawnSimVis.BROADCAST_ADDR, pck)
             self.msg_received = True
             self.visited = True
+            self.probed = True
+            self.log(f"Source {self.id} baslatildi → tüm komşulara PROBE")
+            self.send(DawnSimVis.BROADCAST_ADDR, {'type': 'probe', 'sender': self.id})
 
     def on_receive(self, pck):
-        if pck['type'] == 'encoded':
-            self.received_packets.append((pck['sender'], pck['indices']))
+        if pck['type'] == 'probe':
+            sender_id = pck['sender']
+            if not self.probed:
+                self.probed = True
+                self.log(f'Node {self.id} probe alindi from {sender_id}, sending ACK')
+                self.send(sender_id, {'type': 'ack', 'sender': self.id})
+            else:
+                self.log(f'Node {self.id} zaten probelendi, sending REJECT to {sender_id}')
+                self.send(sender_id, {'type': 'reject', 'sender': self.id})
 
+        elif pck['type'] == 'ack':
+            sender_id = pck['sender']
+            self.probe_acks[sender_id] = True
+            self.log(f'Node {self.id} ACK alindi from {sender_id}')
+
+        elif pck['type'] == 'reject':
+            sender_id = pck['sender']
+            self.probe_rejects[sender_id] = True
+            self.log(f'Node {self.id} REJECT alindi from {sender_id}')
+
+        elif pck['type'] == 'encoded':
+            self.received_packets.append((pck['sender'], pck['indices']))
             if not self.visited:
                 self.parent = pck['sender']
                 self.selected_indices, self.encoded_symbol = pck['indices']
                 self.visited = True
                 self.change_color(0, 0, 1)
-                self.log(f'Node {self.id} paketi {self.parent}. düğümden aldi: indices = {self.selected_indices}')
+                self.log(f'Node {self.id} paketi {self.parent}. düğümden aldı: indices = {self.selected_indices}')
 
                 parent_node = self.sim.nodes[self.parent]
                 if parent_node:
@@ -118,6 +140,10 @@ class Node(DawnSimVis.BaseNode):
                     'indices': (self.selected_indices, self.encoded_symbol)
                 })
 
+                # Probe mesajını tüm komşulara gönder
+                self.log(f'Node {self.id} tüm komşulara PROBE gönderiyor')
+                self.send(DawnSimVis.BROADCAST_ADDR, {'type': 'probe', 'sender': self.id})
+
     def cb_msg_send(self, pck):
         self.send(DawnSimVis.BROADCAST_ADDR, pck)
         self.change_color(0, 1, 0)
@@ -130,6 +156,10 @@ class Node(DawnSimVis.BaseNode):
             self.log(f'Node {self.id} -> Children: {self.children}')
         if self.received_packets:
             self.log(f'Node {self.id} -> Received Packets: {[(sender, indices[0], indices[1]) for sender, indices in self.received_packets]}')
+        if self.probe_acks:
+            self.log(f'Node {self.id} -> Received ACKs: {list(self.probe_acks.keys())}')
+        if self.probe_rejects:
+            self.log(f'Node {self.id} -> Received REJECTs: {list(self.probe_rejects.keys())}')
 
 # Ağ oluşturma
 def create_network():
@@ -141,11 +171,11 @@ def create_network():
 
 # Simülatör oluştur
 sim = DawnSimVis.Simulator(
-    duration=30,  # Simülasyon süresini artırdık
+    duration=30,
     timescale=1,
     visual=True,
     terrain_size=(650, 650),
-    title='Belief Propagation Decoding'
+    title='Belief Propagation Decoding with Probe'
 )
 
 create_network()
@@ -158,7 +188,6 @@ for node in sim.nodes:
         for sender_id, (indices, value) in node.received_packets:
             all_received_packets.append((indices, value))
 
-#decode_data icerisinde decode edilen veriler tutuluyor
 decoded_data = decode_lt(all_received_packets, k)
 
 if np.array_equal(decoded_data, data):
