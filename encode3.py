@@ -7,8 +7,8 @@ from collections import defaultdict
 from scipy.special import expit
 
 SOURCE = 0
-k = 1000   # Veri boyutu
-n = 1200   # Düğüm sayısı
+k = 1000  # Orijinal veri boyutu
+n = 2500  # Düğüm sayısı
 
 # Veri oluşturma
 data = np.random.randint(0, 2, k, dtype=np.uint8)
@@ -36,38 +36,47 @@ def encode_lt(data, probabilities):
         encoded_symbol ^= data[i]
     return selected_indices, encoded_symbol
 
-# Belief Propagation Decode
-def decode_lt(received_packets, k):
-    known_values = np.full(k, -1, dtype=np.int8) #known_values icine bilinmeyenleri atiyoruz
-    symbol_queue = []
-    equations = received_packets.copy()#agdaki diger dugumlerden alinan kodlanmis paketlerin (encoded symbols) bir kopyasidir.
+# Belief Propagation Decoder
+def belief_propagation_decode(received_packets, k, max_iter=100):
+    print("\nBP decode işlemi başlatılıyor...")
+    variable_nodes = defaultdict(list)
+    check_nodes = []
 
-    # İlk tek bilinmeyenli denklemleri kuyrukla başlat
-    for node_id, (indices, value) in enumerate(equations):
-        if len(indices) == 1:
-            symbol_queue.append((node_id, indices[0], value))
+    for indices, value in received_packets:
+        check_nodes.append((indices, value))
+        for idx in indices:
+            variable_nodes[idx].append(len(check_nodes) - 1)
 
-    while symbol_queue:
-        node_id, index, value = symbol_queue.pop(0)
-        if known_values[index] != -1:
-            continue
-        known_values[index] = value
-        for other_node_id, (indices, val) in enumerate(equations):
-            if other_node_id == node_id:
-                continue
-            if index in indices:
-                indices.remove(index)
-                val ^= value
-                equations[other_node_id] = (indices, val)
-                #guncellenen tek bilinmeyenli ise kuyruga ekle
-                if len(indices) == 1:
-                    symbol_queue.append((other_node_id, indices[0], val))
+    beliefs = np.zeros(k)
+    messages = {}
 
-    # Bilinmeyenleri sıfır yap
-    result = np.zeros(k, dtype=np.uint8)
-    for i in range(k):
-        result[i] = known_values[i] if known_values[i] != -1 else 0
-    return result
+    for iteration in range(max_iter):
+        updated = False
+
+        # Check nodes -> Variable nodes
+        for check_id, (indices, value) in enumerate(check_nodes):
+            for target in indices:
+                msg = value
+                for other in indices:
+                    if other != target and beliefs[other] != 0:
+                        msg ^= int(beliefs[other] > 0)
+                messages[(check_id, target)] = 1 if msg == 1 else -1
+
+        # Variable nodes -> Update beliefs
+        for var_id in range(k):
+            msg_sum = sum(messages.get((check_id, var_id), 0) for check_id in variable_nodes[var_id])
+            new_belief = msg_sum
+            if abs(new_belief - beliefs[var_id]) > 1e-6:
+                updated = True
+            beliefs[var_id] = new_belief
+
+        if not updated:
+            print(f"İterasyon {iteration + 1}'de güncelleme durdu.")
+            break
+
+    decoded = np.where(beliefs > 0, 1, 0).astype(np.uint8)
+    return decoded
+
 # Node sınıfı
 class Node(DawnSimVis.BaseNode):
     def __init__(self, simulator, node_id, pos, tx_range):
@@ -75,51 +84,26 @@ class Node(DawnSimVis.BaseNode):
         self.msg_received = False
         self.parent = None
         self.children = []
-        self.visited = False #dugum daha once ziyaret edildi mi
-        self.selected_indices = None # k degerlerini tutar (orijinal veri) indekslerini tutar.[4, 15, 300]
-        self.encoded_symbol = None #selected_indices hangi degerleri xorlanmis
-        self.received_packets =[] #gelen tum encode verileri saklamak icin liste
-        self.probed = False
-        self.probe_acks = {}  # Hangi düğümlerden ACK alındığını takip eder
-        self.probe_rejects = {}  # Hangi düğümlerden REJECT alındığını takip eder
+        self.visited = False
+        self.selected_indices = None
+        self.encoded_symbol = None
+        self.received_packets = []
 
     def run(self):
         if self.id == SOURCE:
             self.change_color(1, 0, 0)
             probabilities = robust_soliton_distribution(k)
             self.selected_indices, self.encoded_symbol = encode_lt(data, probabilities)
-            self.log(f'Node {self.id} encoded: indices = {self.selected_indices}, value = {self.encoded_symbol}')
+            self.log(f'Node {self.id} encoded: value = {self.selected_indices}')
             pck = {'type': 'encoded', 'sender': self.id, 'indices': (self.selected_indices, self.encoded_symbol)}
             self.send(DawnSimVis.BROADCAST_ADDR, pck)
             self.msg_received = True
             self.visited = True
-            self.probed = True
-            self.log(f"Source {self.id} baslatildi → tüm komşulara PROBE")
-            self.send(DawnSimVis.BROADCAST_ADDR, {'type': 'probe', 'sender': self.id})
 
     def on_receive(self, pck):
-        if pck['type'] == 'probe':
-            sender_id = pck['sender']
-            if not self.probed:
-                self.probed = True
-                self.log(f'Node {self.id} probe alindi from {sender_id}, sending ACK')
-                self.send(sender_id, {'type': 'ack', 'sender': self.id})
-            else:
-                self.log(f'Node {self.id} zaten probelendi, sending REJECT to {sender_id}')
-                self.send(sender_id, {'type': 'reject', 'sender': self.id})
-
-        elif pck['type'] == 'ack':
-            sender_id = pck['sender']
-            self.probe_acks[sender_id] = True
-            self.log(f'Node {self.id} ACK alindi from {sender_id}')
-
-        elif pck['type'] == 'reject':
-            sender_id = pck['sender']
-            self.probe_rejects[sender_id] = True
-            self.log(f'Node {self.id} REJECT alindi from {sender_id}')
-
-        elif pck['type'] == 'encoded':
+        if pck['type'] == 'encoded':
             self.received_packets.append((pck['sender'], pck['indices']))
+
             if not self.visited:
                 self.parent = pck['sender']
                 self.selected_indices, self.encoded_symbol = pck['indices']
@@ -127,9 +111,10 @@ class Node(DawnSimVis.BaseNode):
                 self.change_color(0, 0, 1)
                 self.log(f'Node {self.id} paketi {self.parent}. düğümden aldı: indices = {self.selected_indices}')
 
-                parent_node = self.sim.nodes[self.parent]
-                if parent_node:
-                    parent_node.children.append(self.id)
+                if self.parent is not None and self.parent < len(self.sim.nodes):
+                    parent_node = self.sim.nodes[self.parent]
+                    if parent_node:
+                        parent_node.children.append(self.id)
 
                 probabilities = robust_soliton_distribution(k)
                 self.selected_indices, self.encoded_symbol = encode_lt(data, probabilities)
@@ -139,10 +124,6 @@ class Node(DawnSimVis.BaseNode):
                     'sender': self.id,
                     'indices': (self.selected_indices, self.encoded_symbol)
                 })
-
-                # Probe mesajını tüm komşulara gönder
-                self.log(f'Node {self.id} tüm komşulara PROBE gönderiyor')
-                self.send(DawnSimVis.BROADCAST_ADDR, {'type': 'probe', 'sender': self.id})
 
     def cb_msg_send(self, pck):
         self.send(DawnSimVis.BROADCAST_ADDR, pck)
@@ -155,11 +136,7 @@ class Node(DawnSimVis.BaseNode):
         if self.children:
             self.log(f'Node {self.id} -> Children: {self.children}')
         if self.received_packets:
-            self.log(f'Node {self.id} -> Received Packets: {[(sender, indices[0], indices[1]) for sender, indices in self.received_packets]}')
-        if self.probe_acks:
-            self.log(f'Node {self.id} -> Received ACKs: {list(self.probe_acks.keys())}')
-        if self.probe_rejects:
-            self.log(f'Node {self.id} -> Received REJECTs: {list(self.probe_rejects.keys())}')
+            self.log(f'Node {self.id} -> Received Packets: {[(sender, indices[0]) for sender, indices in self.received_packets]}')
 
 # Ağ oluşturma
 def create_network():
@@ -167,34 +144,34 @@ def create_network():
         for y in range(10):
             px = 50 + x * 60 + random.uniform(-20, 20)
             py = 50 + y * 60 + random.uniform(-20, 20)
-            sim.add_node(Node, pos=(px, py), tx_range=75)
+            sim.add_node(Node, pos=(px, py), tx_range=100)
 
-# Simülatör oluştur
+# Simülatör başlat
 sim = DawnSimVis.Simulator(
-    duration=30,
+    duration=50,
     timescale=1,
     visual=True,
     terrain_size=(650, 650),
-    title='Belief Propagation Decoding with Probe'
+    title='Belief Propagation Decoding'
 )
 
 create_network()
 sim.run()
 
-# Simülasyon sonrası decode işlemi
+# Decode sonrası
 all_received_packets = []
 for node in sim.nodes:
     if node.id != SOURCE:
         for sender_id, (indices, value) in node.received_packets:
             all_received_packets.append((indices, value))
 
-decoded_data = decode_lt(all_received_packets, k)
+decoded_data = belief_propagation_decode(all_received_packets, k)
 
+# Kontrol
 if np.array_equal(decoded_data, data):
-    print("\nBasariyla cozuldu!")
+    print("\nBaşarıyla çözüldü!")
 else:
-    #print("\n Veri tam cozulemedi.")
-    #unsolved_bits cozulmeyen indeksleri veriyor
-    unsolved_index = np.where(decoded_data != data)[0]
-    #print(f"Cozulemeyen bitler (indeksler): {unsolved_bits}")
-    print(f"Cozulemeyen bit sayisi: {len(unsolved_index)}")
+    print("\nVeri tam çözülemedi.")
+    unsolved_bits = np.where(decoded_data != data)[0]
+    print(f"Çözülemeyen bitler (indeksler): {unsolved_bits}")
+    print(f"Çözülemeyen bit sayısı: {len(unsolved_bits)}")
