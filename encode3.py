@@ -28,8 +28,8 @@ def robust_soliton_distribution(k, delta=0.05, c=0.2):
     return distribution
 
 # Encoding işlemi
-def encode_lt(data, probabilities):
-    degree = np.random.choice(np.arange(1, k + 1), p=probabilities)
+def encode_lt(data, distribution):
+    degree = np.random.choice(np.arange(1, k + 1), p=distribution)
     selected_indices = random.sample(range(k), min(degree, k))
     encoded_symbol = data[selected_indices[0]]
     for i in selected_indices[1:]:
@@ -37,45 +37,37 @@ def encode_lt(data, probabilities):
     return selected_indices, encoded_symbol
 
 # Belief Propagation Decoder
-def belief_propagation_decode(received_packets, k, max_iter=100):
-    print("\nBP decode işlemi başlatılıyor...")
-    variable_nodes = defaultdict(list)
-    check_nodes = []
+def decode_lt(received_packets, k):
+    known_values = np.full(k, -1, dtype=np.int8) #known_values icine bilinmeyenleri atiyoruz
+    symbol_queue = []
+    equations = received_packets.copy()#agdaki diger dugumlerden alinan kodlanmis paketlerin (encoded symbols) bir kopyasidir.
 
-    for indices, value in received_packets:
-        check_nodes.append((indices, value))
-        for idx in indices:
-            variable_nodes[idx].append(len(check_nodes) - 1)
+    # İlk tek bilinmeyenli denklemleri kuyrukla başlat
+    for node_id, (indices, value) in enumerate(equations):
+        if len(indices) == 1:
+            symbol_queue.append((node_id, indices[0], value))
 
-    beliefs = np.zeros(k)
-    messages = {}
+    while symbol_queue:
+        node_id, index, value = symbol_queue.pop(0)
+        if known_values[index] != -1:
+            continue
+        known_values[index] = value
+        for other_node_id, (indices, val) in enumerate(equations):
+            if other_node_id == node_id:
+                continue
+            if index in indices:
+                indices.remove(index)
+                val ^= value
+                equations[other_node_id] = (indices, val)
+                #guncellenen tek bilinmeyenli ise kuyruga ekle
+                if len(indices) == 1:
+                    symbol_queue.append((other_node_id, indices[0], val))
 
-    for iteration in range(max_iter):
-        updated = False
-
-        # Check nodes -> Variable nodes
-        for check_id, (indices, value) in enumerate(check_nodes):
-            for target in indices:
-                msg = value
-                for other in indices:
-                    if other != target and beliefs[other] != 0:
-                        msg ^= int(beliefs[other] > 0)
-                messages[(check_id, target)] = 1 if msg == 1 else -1
-
-        # Variable nodes -> Update beliefs
-        for var_id in range(k):
-            msg_sum = sum(messages.get((check_id, var_id), 0) for check_id in variable_nodes[var_id])
-            new_belief = msg_sum
-            if abs(new_belief - beliefs[var_id]) > 1e-6:
-                updated = True
-            beliefs[var_id] = new_belief
-
-        if not updated:
-            print(f"İterasyon {iteration + 1}'de güncelleme durdu.")
-            break
-
-    decoded = np.where(beliefs > 0, 1, 0).astype(np.uint8)
-    return decoded
+    # Bilinmeyenleri sıfır yap
+    result = np.zeros(k, dtype=np.uint8)
+    for i in range(k):
+        result[i] = known_values[i] if known_values[i] != -1 else 0
+    return result
 
 # Node sınıfı
 class Node(DawnSimVis.BaseNode):
@@ -165,7 +157,7 @@ for node in sim.nodes:
         for sender_id, (indices, value) in node.received_packets:
             all_received_packets.append((indices, value))
 
-decoded_data = belief_propagation_decode(all_received_packets, k)
+decoded_data = decode_lt(all_received_packets, k)
 
 # Kontrol
 if np.array_equal(decoded_data, data):
