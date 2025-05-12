@@ -1,8 +1,7 @@
 import random
 import sys
-sys.path.insert(1, '.')
-from source import DawnSimVis
 import numpy as np
+from source import DawnSimVis
 
 SOURCE = 0  # Root node ID
 k = 1000  # Orijinal veri boyutu
@@ -186,10 +185,10 @@ class Node(DawnSimVis.BaseNode):
                                 parent_node.children.append(self.id)
 
     def finish(self):
-        if self.parent is not None:
-            self.log(f'Node {self.id} -> Parent: {self.parent}')
-        if self.children:
-            self.log(f'Node {self.id} -> Children: {self.children}')
+        #if self.parent is not None:
+            #self.log(f'Node {self.id} -> Parent: {self.parent}')
+        #if self.children:
+            #self.log(f'Node {self.id} -> Children: {self.children}')
         
         # Sadece SOURCE düğümü decoding yapar ve sonucu loglar
         if self.id == SOURCE and self.received_packets:
@@ -197,13 +196,7 @@ class Node(DawnSimVis.BaseNode):
             decoded_data = decode_lt(self.received_packets, k)
             correct_bits = np.sum(decoded_data == data)
             self.log(f"SOURCE Node decoded {correct_bits}/{k} bits correctly.")
-            self.log(f"Decoded data (first 100 bits): {decoded_data[:100]}")
-            if np.array_equal(decoded_data, data):
-                self.change_color(1, 0, 1)  # Mor: Başarılı decoding
-                self.log(f"SOURCE Node {self.id} successfully decoded the data! Overall decoding successful.")
-            else:
-                self.log(f"SOURCE Node {self.id} failed to decode the data. Overall decoding failed.")
-
+            
 ###########################################################
 def create_network():
     for x in range(10):
@@ -214,7 +207,7 @@ def create_network():
 
 # Set up the simulation
 sim = DawnSimVis.Simulator(
-    duration=100,  # Simulation duration (seconds)
+    duration=40,  # Simulation duration (seconds)
     timescale=1,  # Time scale to control simulation speed
     visual=True,   # Enable visualization
     terrain_size=(650, 650),  # Terrain size
