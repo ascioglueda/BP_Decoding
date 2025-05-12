@@ -1,3 +1,44 @@
+class Node(DawnSimVis.BaseNode):
+    def init(self):
+        self.currstate = 'IDLE'
+        self.parent = None
+        self.children = []  
+        self.others = set()
+        self.sent_probes = False
+        self.received_reject = set()
+        self.received_ack = set()
+        self.received_packets = []
+
+        self.log(f"Node {self.id} started in IDLE state.")
+
+    def run(self):
+        if self.id == SOURCE:
+            self.change_color(1, 0, 0)  # Kırmızı: Root
+            self.currstate = 'XPLORING'
+            self.sent_probes = True
+            self.log(f"Root node {self.id} sent probe message.")
+            self.cb_flood_send({'type': 'probe', 'sender': self.id})
+
+            probabilities = robust_soliton_distribution(k)
+            selected_indices, encoded_symbol = encode_lt(data, probabilities)
+            self.log(f"Node {self.id} encoded: indices = {selected_indices}")
+            received_packets = {
+                'type': 'encoded',
+                'sender': self.id,
+                'indices': (selected_indices, encoded_symbol)
+            }
+            self.set_timer(1, self.cb_msg_send, received_packets)
+
+    def cb_flood_send(self, pck):
+        self.send(DawnSimVis.BROADCAST_ADDR, pck)
+
+    def cb_msg_send(self, pck):
+        if self.parent is not None:
+            self.send(self.parent, pck)
+        for child in self.children:
+            self.send(child, pck)
+        self.log(f"Node {self.id} sent packet to parent and children.")
+
     def on_receive(self, pck):
         sender_id = pck['sender']
         msg_type = pck['type']
@@ -18,7 +59,7 @@
                 self.log(f"Node {self.id} sent reject to {sender_id}.")
             elif msg_type == 'ack':
                 self.received_ack.add(sender_id)
-                self.childs.add(sender_id)
+                self.children.append(sender_id)  # 'childs' yerine 'children' kullandık
                 self.log(f"Node {self.id} added {sender_id} as child.")
             elif msg_type == 'reject':
                 self.received_reject.add(sender_id)
@@ -32,10 +73,9 @@
                     self.currstate = 'TERM'
                     self.log(f"Node {self.id} transitioning to TERM state.")
 
-                    # TERM durumuna geçtikten sonra sadece 1 encoded paket gönder
                     probabilities = robust_soliton_distribution(k)
                     selected_indices, encoded_symbol = encode_lt(data, probabilities)
-                    self.set_timer(2, self.cb_msg_send, {
+                    self.set_timer(2 , self.cb_msg_send, {
                         'type': 'encoded',
                         'sender': self.id,
                         'indices': (selected_indices, encoded_symbol)
@@ -45,7 +85,7 @@
                     self.log(f"Root node {self.id} finished.")
 
         # Encoded paketleri al ve SOURCE'a gönder
-        if msg_type == 'encoded' and 'indices' in pck and isinstance(pck['indices'], tuple):
+        if msg_type == 'encoded' and 'indices' in pck:
             indices_data = pck['indices']
             if len(indices_data) == 2:
                 selected_indices, encoded_symbol = indices_data
@@ -59,7 +99,6 @@
                         'sender': self.id,
                         'indices': (selected_indices.copy(), encoded_symbol)
                     })
-
                 # Parent-child ilişkisini kur
                 if sender_id not in self.children and sender_id != self.parent:
                     if self.parent is None or sender_id == self.parent:
@@ -68,3 +107,14 @@
                             parent_node = self.sim.nodes[self.parent]
                             if parent_node:
                                 parent_node.children.append(self.id)
+
+    def finish(self):
+        #if self.parent is not None:
+            #self.log(f'Node {self.id} -> Parent: {self.parent}')
+        #if self.children:
+            #self.log(f'Node {self.id} -> Children: {self.children}')
+        # Sadece SOURCE düğümü decoding yapar ve sonucu loglar
+        if self.id == SOURCE and self.received_packets:
+            decoded_data = decode_lt(self.received_packets, k)
+            correct_bits = np.sum(decoded_data == data)
+            self.log(f"SOURCE Node decoded {correct_bits}/{k} bits correctly.")

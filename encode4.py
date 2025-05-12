@@ -69,14 +69,12 @@ class Node(DawnSimVis.BaseNode):
     def init(self):
         self.currstate = 'IDLE'
         self.parent = None
-        self.children = []
-        self.childs = set()
+        self.children = []  
         self.others = set()
         self.sent_probes = False
         self.received_reject = set()
         self.received_ack = set()
         self.received_packets = []
-        self.visited = False
 
         self.log(f"Node {self.id} started in IDLE state.")
 
@@ -88,24 +86,20 @@ class Node(DawnSimVis.BaseNode):
             self.log(f"Root node {self.id} sent probe message.")
             self.cb_flood_send({'type': 'probe', 'sender': self.id})
 
-            # 5 kez encoded paket gönder
             probabilities = robust_soliton_distribution(k)
-            for i in range(5):
-                selected_indices, encoded_symbol = encode_lt(data, probabilities)
-                self.log(f"Node {self.id} encoded: indices = {selected_indices}")
-                encoded_packet = {
-                    'type': 'encoded',
-                    'sender': self.id,
-                    'indices': (selected_indices, encoded_symbol)
-                }
-                self.set_timer(1 + i * 0.5, self.cb_msg_send, encoded_packet)
+            selected_indices, encoded_symbol = encode_lt(data, probabilities)
+            self.log(f"Node {self.id} encoded: indices = {selected_indices}")
+            received_packets = {
+                'type': 'encoded',
+                'sender': self.id,
+                'indices': (selected_indices, encoded_symbol)
+            }
+            self.set_timer(1, self.cb_msg_send, received_packets)
 
     def cb_flood_send(self, pck):
         self.send(DawnSimVis.BROADCAST_ADDR, pck)
-        self.log(f"Node {self.id} broadcasted message.")
 
     def cb_msg_send(self, pck):
-        # Mesajları yalnızca children ve parent'a gönder
         if self.parent is not None:
             self.send(self.parent, pck)
         for child in self.children:
@@ -132,7 +126,7 @@ class Node(DawnSimVis.BaseNode):
                 self.log(f"Node {self.id} sent reject to {sender_id}.")
             elif msg_type == 'ack':
                 self.received_ack.add(sender_id)
-                self.childs.add(sender_id)
+                self.children.append(sender_id) 
                 self.log(f"Node {self.id} added {sender_id} as child.")
             elif msg_type == 'reject':
                 self.received_reject.add(sender_id)
@@ -142,25 +136,23 @@ class Node(DawnSimVis.BaseNode):
             if self.sent_probes and (self.received_ack or self.received_reject):
                 if self.id != SOURCE:
                     self.send(self.parent, {'type': 'ack', 'sender': self.id})
-                    self.change_color(0, 1, 0)  # Yeşil: TERM
+                    self.change_color(0, 1, 0)  # green
                     self.currstate = 'TERM'
                     self.log(f"Node {self.id} transitioning to TERM state.")
 
-                    # TERM durumuna geçtikten sonra 5 kez encoded paket gönder
                     probabilities = robust_soliton_distribution(k)
-                    for i in range(5):
-                        selected_indices, encoded_symbol = encode_lt(data, probabilities)
-                        self.set_timer(2 + i * 0.5, self.cb_msg_send, {
-                            'type': 'encoded',
-                            'sender': self.id,
-                            'indices': (selected_indices, encoded_symbol)
-                        })
+                    selected_indices, encoded_symbol = encode_lt(data, probabilities)
+                    self.set_timer(2 , self.cb_msg_send, {
+                        'type': 'encoded',
+                        'sender': self.id,
+                        'indices': (selected_indices, encoded_symbol)
+                    })
                 else:
                     self.currstate = 'TERM'
                     self.log(f"Root node {self.id} finished.")
 
         # Encoded paketleri al ve SOURCE'a gönder
-        if msg_type == 'encoded' and 'indices' in pck and isinstance(pck['indices'], tuple):
+        if msg_type == 'encoded' and 'indices' in pck:
             indices_data = pck['indices']
             if len(indices_data) == 2:
                 selected_indices, encoded_symbol = indices_data
@@ -174,7 +166,6 @@ class Node(DawnSimVis.BaseNode):
                         'sender': self.id,
                         'indices': (selected_indices.copy(), encoded_symbol)
                     })
-
                 # Parent-child ilişkisini kur
                 if sender_id not in self.children and sender_id != self.parent:
                     if self.parent is None or sender_id == self.parent:
@@ -189,14 +180,11 @@ class Node(DawnSimVis.BaseNode):
             #self.log(f'Node {self.id} -> Parent: {self.parent}')
         #if self.children:
             #self.log(f'Node {self.id} -> Children: {self.children}')
-        
         # Sadece SOURCE düğümü decoding yapar ve sonucu loglar
         if self.id == SOURCE and self.received_packets:
-            self.log(f"SOURCE Node {self.id} collected {len(self.received_packets)} encoded packets in total.")
             decoded_data = decode_lt(self.received_packets, k)
             correct_bits = np.sum(decoded_data == data)
             self.log(f"SOURCE Node decoded {correct_bits}/{k} bits correctly.")
-            
 ###########################################################
 def create_network():
     for x in range(10):
@@ -207,11 +195,11 @@ def create_network():
 
 # Set up the simulation
 sim = DawnSimVis.Simulator(
-    duration=40,  # Simulation duration (seconds)
-    timescale=1,  # Time scale to control simulation speed
-    visual=True,   # Enable visualization
-    terrain_size=(650, 650),  # Terrain size
-    title='Spanning Tree Simulation'  # Title
+    duration=40,
+    timescale=1,  
+    visual=True,   
+    terrain_size=(650, 650),  
+    title='Spanning Tree Simulation'  
 )
 
 # Create the network
