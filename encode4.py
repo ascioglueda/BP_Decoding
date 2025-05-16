@@ -6,7 +6,7 @@ from source import DawnSimVis  # Simülasyon ortamını sağlayan özel bir mod�
 
 SOURCE = 0  # Root düğüm
 k = 1000  # Orijinal veri boyutu
-n = 100  # Düğüm sayısı (10x10 grid için uygun)
+n = 100  # Düğüm sayısı
 
 # 0 ve 1'lerden oluşan rastgele veri oluşturuluyor
 data = np.random.randint(0, 2, k, dtype=np.uint8)
@@ -35,42 +35,47 @@ def encode_lt(data, distribution):
     return selected_indices, encoded_symbol
 
 # LT kod çözme fonksiyonu (Belief Propagation Decoder)
-def decode_lt(received_packets, k):
+def decode_lt(received_packets, k, node_id, original_data):
     known_values = np.full(k, -1, dtype=np.int8)  # Bilinmeyen değerler -1 olarak atanır
     symbol_queue = []
     equations = received_packets.copy()
 
     # Tek bilinmeyenli (tek indeksli) denklemler kuyruğa eklenir
-    for node_id, (indices, value) in enumerate(equations):
+    print(f"Node {node_id}: Baslangicta derecesi 1 olan paketler:")
+    for packet_id, (indices, value) in enumerate(equations):
         if len(indices) == 1:
-            symbol_queue.append((node_id, indices[0], value))
+            print(f"  Paket {packet_id}: indeks={indices[0]}, değer={value}")
+            symbol_queue.append((packet_id, indices[0], value))
 
     # Belief Propagation döngüsü
     while symbol_queue:
-        node_id, index, value = symbol_queue.pop(0)
+        packet_id, index, value = symbol_queue.pop(0)
         if known_values[index] != -1:
             continue
         known_values[index] = value
-        for other_node_id, (indices, val) in enumerate(equations):
-            if other_node_id == node_id:
+        for other_packet_id, (indices, val) in enumerate(equations):
+            if other_packet_id == packet_id:
                 continue
             if index in indices:
                 indices.remove(index)
                 val ^= value
-                equations[other_node_id] = (indices, val)
+                equations[other_packet_id] = (indices, val)
                 if len(indices) == 1:
-                    symbol_queue.append((other_node_id, indices[0], val))
+                    symbol_queue.append((other_packet_id, indices[0], val))
 
     # Bilinmeyenler sıfır kabul edilerek sonuç dizisi oluşturulur
     result = np.zeros(k, dtype=np.uint8)
     for i in range(k):
         result[i] = known_values[i] if known_values[i] != -1 else 0
+
+    # Dekodlama başarısını hesapla ve logla
+    correct_bits = np.sum(result == original_data)
+    success_rate = (correct_bits / k) * 100
+    print(f"Node {node_id} Decoding Result: {correct_bits}/{k} bits correctly decoded ({success_rate:.2f}% success rate)")
     return result
 
-# Simülasyon ortamında kullanılacak düğüm sınıfı
 class Node(DawnSimVis.BaseNode):
     def init(self):
-        # Düğüm başlangıç durumu ve değişkenler
         self.currstate = 'IDLE'
         self.parent = None
         self.children = []
@@ -81,7 +86,6 @@ class Node(DawnSimVis.BaseNode):
         self.received_packets = []
         self.collected_messages = set()  # Root'un topladığı düğüm ID'leri
         self.encode_count = 0  # Root için encode mesaj sayacı
-        self.max_encodes = 10  # Her düğüm için gönderilecek encode mesaj sayısı
         self.log(f"Node {self.id} started in IDLE state.")
 
     def run(self):
@@ -98,27 +102,39 @@ class Node(DawnSimVis.BaseNode):
     def cb_flood_send(self, pck):
         self.send(DawnSimVis.BROADCAST_ADDR, pck)
 
-    def cb_msg_send(self, pck):
-        # Mesajları sadece çocuklara gönder
-        for child in self.children:
-            self.send(child, pck)
-        self.log(f"Node {self.id} sent packet to children: {pck['type']}")
-
     def start_encoding(self):
         # Root encode işlemini başlatır
         probabilities = robust_soliton_distribution(k)
-        self.log(f"Node {self.id} starting encoding process. Collected {len(self.collected_messages)} messages.")
-        # Her düğüm için max_encodes kadar encode mesajı gönder
-        for _ in range(self.max_encodes * (n - 1)):
+        self.log(f"Node {self.id} starting encoding process. Collected {len(self.collected_messages)} messages out of {n-1}.")
+
+        # Root kendine bir sembol saklar
+        selected_indices, encoded_symbol = encode_lt(data, probabilities)
+        self.received_packets.append((selected_indices.copy(), encoded_symbol))
+        self.log(f"Root node {self.id} saved a symbol for itself with indices: {selected_indices}")
+
+        # Her düğüm için 1 encode paketi gönder
+        for target_node in range(1, n):  # 1'den (n-1)'e kadar tüm düğümler
             selected_indices, encoded_symbol = encode_lt(data, probabilities)
             self.encode_count += 1
             pck = {
                 'type': 'encoded',
                 'sender': self.id,
-                'indices': (selected_indices, encoded_symbol)
+                'indices': selected_indices,
+                'symbol': encoded_symbol,
+                'target': target_node  # Hedef düğüm ID'si
             }
-            self.set_timer(2 + self.encode_count * 0.1, self.cb_msg_send, pck)
-            self.log(f"Node {self.id} scheduled encoded packet {self.encode_count}: indices = {selected_indices}")
+            # Paketleri sırayla göndermek için zamanlayıcı kullan
+            self.set_timer(2 + self.encode_count * 0.01, self.send_encoded_packet, pck)
+        
+        # Encode işlemi bittikten 10 saniye sonra decode işlemini başlat
+        total_encoding_time = 2 + (n - 1) * 0.01  # n-1 diğer düğüm sayısıdır
+        self.set_timer(total_encoding_time + 10, self.start_decoding)
+
+    def send_encoded_packet(self, pck):
+        # Mesajı doğrudan hedef düğüme gönder
+        target_node = pck['target']
+        self.send(target_node, pck)
+        self.log(f"Node {self.id} sent encoded packet to node {target_node} with indices: {pck['indices']}")
 
     def force_start_encoding(self):
         # Eğer spanning tree tamamlanmazsa, encode işlemini zorla başlat
@@ -127,10 +143,16 @@ class Node(DawnSimVis.BaseNode):
             self.currstate = 'TERM'
             self.start_encoding()
 
+    def start_decoding(self):
+        # Root için decode işlemini başlat
+        if self.id == SOURCE and self.received_packets:
+            self.log(f"Node {self.id} starting decoding process with {len(self.received_packets)} packets.")
+            decode_lt(self.received_packets, k, self.id, data)
+
     def on_receive(self, pck):
         sender_id = pck['sender']
         msg_type = pck['type']
-        self.log(f"Node {self.id} received '{msg_type}' from {sender_id}.")
+        self.log(f"Node {self.id} received '{msg_type}' packet from node {sender_id}.")
 
         # Spanning Tree oluşturma
         if self.currstate == 'IDLE' and msg_type == 'probe':
@@ -160,62 +182,51 @@ class Node(DawnSimVis.BaseNode):
                     self.send(self.parent, {'type': 'ack', 'sender': self.id})
                     self.change_color(0, 1, 0)  # Yeşil renk
                     self.currstate = 'TERM'
-                    self.log(f"Node {self.id} transitioning to TERM state.")
+                    self.log(f"Node {self.id} transitioned to TERM state.")
                 else:
                     self.collected_messages.add(sender_id)
-                    self.log(f"Root node {self.id} collected message from {sender_id}. Total: {len(self.collected_messages)}/{n-1}")
-                    # Tüm düğümlerden mesaj alındıysa encode işlemine başla
+                    self.log(f"Root node {self.id} collected message from {sender_id}")
                     if len(self.collected_messages) >= n - 1:
                         self.currstate = 'TERM'
                         self.log(f"Root node {self.id} finished collecting messages. Starting encoding.")
                         self.set_timer(10, self.start_encoding)
 
         # Encode edilmiş mesaj alındığında
-        if msg_type == 'encoded' and 'indices' in pck:
-            indices_data = pck['indices']
-            if len(indices_data) == 2:
-                selected_indices, encoded_symbol = indices_data
-                self.received_packets.append((selected_indices.copy(), encoded_symbol))
-                self.log(f"Node {self.id} received encoded packet from {sender_id}: {selected_indices}")
-                # Mesajı çocuklara ilet
-                if self.children:
-                    for child in self.children:
-                        self.send(child, {
-                            'type': 'encoded',
-                            'sender': self.id,
-                            'indices': (selected_indices.copy(), encoded_symbol)
-                        })
-                    self.log(f"Node {self.id} forwarded encoded packet to children: {self.children}")
-                # Root değilse, paketi root'a ilet
-                if self.id != SOURCE:
-                    self.send(SOURCE, {
-                        'type': 'encoded',
-                        'sender': self.id,
-                        'indices': (selected_indices.copy(), encoded_symbol)
-                    })
+        if msg_type == 'encoded':
+            # Paket yapısına göre veriyi doğru şekilde al
+            if 'indices' in pck and 'symbol' in pck:
+                selected_indices = pck['indices']
+                encoded_symbol = pck['symbol']
+            else:
+                self.log(f"Node {self.id} received invalid encoded packet from {sender_id}")
+                return
+
+            # Alınan paketi kaydet
+            self.received_packets.append((selected_indices.copy(), encoded_symbol))
+            self.log(f"Node {self.id} received encoded packet from {sender_id} with indices: {selected_indices}")
+            
 
     def finish(self):
-        # Root, aldığı kodlanmış paketlerle çözümleme yapar
-        if self.id == SOURCE and self.received_packets:
-            decoded_data = decode_lt(self.received_packets, k)
-            correct_bits = np.sum(decoded_data == data)
-            self.log(f"SOURCE Node decoded {correct_bits}/{k} bits correctly. Total packets: {len(self.received_packets)}")
+        pass
 
-# Ağdaki düğümleri oluşturan fonksiyon
 def create_network():
-    for x in range(10):
-        for y in range(10):
-            px = 50 + x * 60 + random.uniform(-20, 20)
-            py = 50 + y * 60 + random.uniform(-20, 20)
-            sim.add_node(Node, pos=(px, py), tx_range=100)
+    rows = int(np.sqrt(n))  # Yaklaşık kare kök ile satır sayısı
+    cols = (n + rows - 1) // rows  # Sütun sayısı (n'e tam uyması için yuvarlama)
+    spacing = 60
+    for x in range(cols):
+        for y in range(rows):
+            if (x * rows + y) < n:  # n sayısına kadar düğüm ekle
+                px = 50 + x * spacing + random.uniform(-20, 20)  # x ekseni + rastgele kaydırma
+                py = 50 + y * spacing + random.uniform(-20, 20)  # y ekseni + rastgele kaydırma
+                sim.add_node(Node, pos=(px, py), tx_range=100)
 
 # Simülasyon ortamını başlatan ayarlar
 sim = DawnSimVis.Simulator(
-    duration=90,  # Daha uzun süre, encode mesajlarının tamamlanması için
+    duration=500,  # Süre, 99 mesaj için yeterli
     timescale=1,
     visual=True,
-    terrain_size=(700, 700),
-    title='LT Coding Simulation'
+    terrain_size=(650, 650),
+    title='Belief Propagation Decoding'
 )
 
 # Ağı oluştur ve simülasyonu başlat
