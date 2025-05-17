@@ -1,16 +1,17 @@
 import random
 import sys
 import numpy as np
+import time
 from source import DawnSimVis
 
 SOURCE = 0
 k = 1000
-n = 100
+n = 1200
+
+message_count = 0
+start_time = time.time()
 
 data = np.random.randint(0, 2, k, dtype=np.uint8)
-
-# Root node'da encode işlemi sonucu oluşan tüm semboller burada tutulacak
-all_encoded_packets = []
 
 def robust_soliton_distribution(k, delta=0.05, c=0.2):
     R = c * np.log(k / delta) * np.sqrt(k)
@@ -70,6 +71,10 @@ def decode_lt(received_packets, k, data):
     correct_bits = np.sum(result == data)
     success_rate = (correct_bits / k) * 100
     print(f"\nTÜM SEMBOLLERDEN COZUM: {correct_bits}/{k} bit doğru çözüldü (%{success_rate:.2f} başarı oranı)")
+    print(f"Toplam mesaj: {message_count}")
+    print(f"Toplam süre: {time.time() - start_time:.2f} saniye")
+    print(f"Zaman karmaşıklığı tahmini: O({n})")
+    print(f"Mesaj karmaşıklığı tahmini: O({n * np.log2(n):.2f})")
     return result
 
 class Node(DawnSimVis.BaseNode):
@@ -81,6 +86,7 @@ class Node(DawnSimVis.BaseNode):
         self.sent_probes = False
         self.received_reject = set()
         self.received_ack = set()
+        self.received_packets = []
         self.collected_messages = set()
         self.encode_count = 0
         self.sent_links = set()
@@ -92,6 +98,7 @@ class Node(DawnSimVis.BaseNode):
         return ((x1 - x2)**2 + (y1 - y2)**2) ** 0.5
 
     def run(self):
+        global message_count
         if self.id == SOURCE:
             self.change_color(1, 0, 0)
             self.currstate = 'XPLORING'
@@ -102,6 +109,7 @@ class Node(DawnSimVis.BaseNode):
                     link = (self.id, node.id)
                     if link not in self.sent_links:
                         self.send(node.id, {'type': 'probe', 'sender': self.id})
+                        message_count += 1
                         self.sent_links.add(link)
             self.set_timer(20, self.force_start_encoding)
 
@@ -111,10 +119,11 @@ class Node(DawnSimVis.BaseNode):
             self.start_encoding()
 
     def start_encoding(self):
+        global message_count
         probabilities = robust_soliton_distribution(k)
 
         selected_indices, encoded_symbol = encode_lt(data, probabilities)
-        all_encoded_packets.append((selected_indices.copy(), encoded_symbol))
+        self.received_packets.append((selected_indices.copy(), encoded_symbol))
         self.log(f"Root node {self.id} saved a symbol for itself with indices: {selected_indices}")
 
         for target_node in range(1, n):
@@ -127,7 +136,7 @@ class Node(DawnSimVis.BaseNode):
                 'symbol': encoded_symbol,
                 'target': target_node
             }
-            all_encoded_packets.append((selected_indices.copy(), encoded_symbol))
+            self.received_packets.append((selected_indices.copy(), encoded_symbol))
             self.set_timer(2 + self.encode_count * 0.01, self.send_encoded_packet, pck)
 
         total_encoding_time = 2 + (n - 1) * 0.01
@@ -135,16 +144,20 @@ class Node(DawnSimVis.BaseNode):
 
     def start_decoding(self):
         self.log("Root node is starting global decoding...")
-        decode_lt(all_encoded_packets, k, data)
+        decode_lt(self.received_packets, k, data)
 
     def send_encoded_packet(self, pck):
+        global message_count
         target_node = pck['target']
         self.send(target_node, pck)
+        message_count += 1
         self.log(f"Node {self.id} sent encoded packet to node {target_node} with indices: {pck['indices']}")
 
     def on_receive(self, pck):
+        global message_count
         sender_id = pck['sender']
         msg_type = pck['type']
+        message_count += 1
         self.log(f"Node {self.id} received '{msg_type}' packet from node {sender_id}.")
 
         if self.currstate == 'IDLE' and msg_type == 'probe':
@@ -157,12 +170,14 @@ class Node(DawnSimVis.BaseNode):
                     link = (self.id, node.id)
                     if link not in self.sent_links:
                         self.send(node.id, {'type': 'probe', 'sender': self.id})
+                        message_count += 1
                         self.sent_links.add(link)
             self.sent_probes = True
 
         elif self.currstate == 'XPLORING':
             if msg_type == 'probe' and sender_id != self.parent:
                 self.send(sender_id, {'type': 'reject', 'sender': self.id})
+                message_count += 1
             elif msg_type == 'ack':
                 self.received_ack.add(sender_id)
                 self.children.append(sender_id)
@@ -173,6 +188,7 @@ class Node(DawnSimVis.BaseNode):
             if self.sent_probes and (self.received_ack or self.received_reject):
                 if self.id != SOURCE:
                     self.send(self.parent, {'type': 'ack', 'sender': self.id})
+                    message_count += 1
                     self.change_color(0, 1, 0)
                     self.currstate = 'TERM'
                 else:
