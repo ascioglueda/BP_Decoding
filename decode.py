@@ -1,11 +1,11 @@
 import random
 import sys
 import numpy as np
-from source import DawnSimVis  
+from source import DawnSimVis
 
-SOURCE = 0  
-k = 1000 
-n = 100  
+SOURCE = 0
+k = 1000
+n = 100
 
 data = np.random.randint(0, 2, k, dtype=np.uint8)
 
@@ -19,27 +19,22 @@ def robust_soliton_distribution(k, delta=0.05, c=0.2):
             tau[i] = R * np.log(R / delta) / k
     ideal = np.array([1 / k] + [1 / (i * (i - 1)) for i in range(2, k + 1)])
     distribution = ideal + tau
-    distribution /= distribution.sum()  # Normalize edilir
+    distribution /= distribution.sum()
     return distribution
 
 def encode_lt(data, distribution):
-    if random.random()<0.1:
-        degree =1
-    else:
-        degree = np.random.choice(np.arange(1, k + 1), p=distribution)  # Rastgele derece secilir
-    selected_indices = random.sample(range(k), min(degree, k))  # Secilen indeksler
+    degree = 1 if random.random() < 0.1 else np.random.choice(np.arange(1, k + 1), p=distribution)
+    selected_indices = random.sample(range(k), min(degree, k))
     encoded_symbol = data[selected_indices[0]]
     for i in selected_indices[1:]:
-        encoded_symbol ^= data[i]  # XOR islemi ile kodlama yapilir
+        encoded_symbol ^= data[i]
     return selected_indices, encoded_symbol
 
-# Belief Propagation Decoder
 def decode_lt(received_packets, k, data, node_id=None):
     known_values = np.full(k, -1, dtype=np.int8)
     symbol_queue = []
     equations = received_packets.copy()
 
-    # İlk tek bilinmeyenli denklemleri kuyrukla başlat
     for node_id_, (indices, value) in enumerate(equations):
         if len(indices) == 1:
             symbol_queue.append((node_id_, indices[0], value))
@@ -59,14 +54,12 @@ def decode_lt(received_packets, k, data, node_id=None):
                 if len(indices) == 1:
                     symbol_queue.append((other_node_id, indices[0], val))
 
-    # Bilinmeyenleri sıfır yap
     result = np.zeros(k, dtype=np.uint8)
     for i in range(k):
         result[i] = known_values[i] if known_values[i] != -1 else 0
 
-    
     return result
-########################################################
+
 class Node(DawnSimVis.BaseNode):
     def init(self):
         self.currstate = 'IDLE'
@@ -77,30 +70,24 @@ class Node(DawnSimVis.BaseNode):
         self.received_reject = set()
         self.received_ack = set()
         self.received_packets = []
-        self.collected_messages = set()  # Root'un topladığı düğüm ID'leri
-        self.encode_count = 0  # Root için encode mesaj sayacı
+        self.collected_messages = set()
+        self.encode_count = 0
         self.log(f"Node {self.id} started in IDLE state.")
 
     def run(self):
         if self.id == SOURCE:
-            self.change_color(1, 0, 0)  # Kırmızı renk
+            self.change_color(1, 0, 0)
             self.currstate = 'XPLORING'
             self.sent_probes = True
             self.log(f"Root node {self.id} sent probe message.")
             self.cb_flood_send({'type': 'probe', 'sender': self.id})
             self.set_timer(20, self.force_start_encoding)
-        else:
-            self.set_timer(35, self.start_decoding)
+
     def cb_flood_send(self, pck):
         self.send(DawnSimVis.BROADCAST_ADDR, pck)
 
     def start_encoding(self):
         probabilities = robust_soliton_distribution(k)
-
-        selected_indices, encoded_symbol = encode_lt(data, probabilities)
-        self.received_packets.append((selected_indices.copy(), encoded_symbol))
-        self.log(f"Root node {self.id} saved a symbol for itself with indices: {selected_indices}")
-
         for target_node in range(1, n):
             selected_indices, encoded_symbol = encode_lt(data, probabilities)
             self.encode_count += 1
@@ -114,14 +101,14 @@ class Node(DawnSimVis.BaseNode):
             self.set_timer(2 + self.encode_count * 0.01, self.send_encoded_packet, pck)
 
         total_encoding_time = 2 + (n - 1) * 0.01
-        self.set_timer(total_encoding_time + 10, self.start_decoding)  # ⬅️ 10 saniye sonra decoding başlasın
+        self.set_timer(total_encoding_time + 30, self.start_decoding)
 
     def start_decoding(self):
-        if self.id == SOURCE:
-            return  # Source node decode yapmaz
-        self.log(f"Node {self.id} is starting decoding process with {len(self.received_packets)} packets.")
+        if self.id != SOURCE:
+            return  # Sadece root decode yapacak
+        self.log(f"Root node {self.id} starting decoding process with {len(self.received_packets)} packets.")
         result = decode_lt(self.received_packets, k, data, self.id)
-        self.log(f"Node {self.id} finished decoding")
+        self.log(f"Root node {self.id} finished decoding.")
 
 
     def send_encoded_packet(self, pck):
@@ -160,11 +147,10 @@ class Node(DawnSimVis.BaseNode):
                 self.others.add(sender_id)
                 self.log(f"Node {self.id} marked {sender_id} as other.")
 
-            # TERM durumuna geçiş
             if self.sent_probes and (self.received_ack or self.received_reject):
                 if self.id != SOURCE:
                     self.send(self.parent, {'type': 'ack', 'sender': self.id})
-                    self.change_color(0, 1, 0)  # Yeşil renk
+                    self.change_color(0, 1, 0)
                     self.currstate = 'TERM'
                     self.log(f"Node {self.id} transitioned to TERM state.")
                 else:
@@ -174,33 +160,46 @@ class Node(DawnSimVis.BaseNode):
                         self.log(f"Root node {self.id} finished collecting messages. Starting encoding.")
                         self.set_timer(10, self.start_encoding)
 
-        # Encode edilmiş mesaj alındığında
         elif msg_type == 'encoded':
             if 'indices' in pck and 'symbol' in pck:
                 indices = pck['indices']
                 symbol = pck['symbol']
                 self.received_packets.append((indices.copy(), symbol))
                 self.log(f"Node {self.id} stored encoded symbol from node {sender_id}.")
+
+                if self.id != SOURCE:
+                    feedback = {
+                        'type': 'feedback',
+                        'sender': self.id,
+                        'indices': indices,
+                        'symbol': symbol
+                    }
+                    self.set_timer(0.5, self.send, SOURCE, feedback)
             else:
                 self.log(f"Node {self.id} received invalid encoded packet from {sender_id}")
+
+        elif msg_type == 'feedback' and self.id == SOURCE:
+            indices = pck['indices']
+            symbol = pck['symbol']
+            self.received_packets.append((indices.copy(), symbol))
+            self.log(f"Root received encoded packet back from node {sender_id}")
 
     def finish(self):
         pass
 
 def create_network():
-    rows = int(np.sqrt(n)) 
-    cols = (n + rows - 1) // rows  
+    rows = int(np.sqrt(n))
+    cols = (n + rows - 1) // rows
     spacing = 60
     for x in range(cols):
         for y in range(rows):
             if (x * rows + y) < n:
-                px = 50 + x * spacing + random.uniform(-20, 20)  
-                py = 50 + y * spacing + random.uniform(-20, 20)  
+                px = 50 + x * spacing + random.uniform(-20, 20)
+                py = 50 + y * spacing + random.uniform(-20, 20)
                 sim.add_node(Node, pos=(px, py), tx_range=100)
 
-
 sim = DawnSimVis.Simulator(
-    duration=500, 
+    duration=500,
     timescale=1,
     visual=True,
     terrain_size=(650, 650),

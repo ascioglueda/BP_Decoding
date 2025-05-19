@@ -1,0 +1,1472 @@
+[
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500",
+          "750",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "k=500",
+            "data": [
+              11309,
+              17136,
+              23142
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=500 i\u00e7in Mesaj Say\u0131s\u0131 (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500",
+          "750",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "k=500",
+            "data": [
+              121.42,
+              84.53,
+              101.23
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=500 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500",
+          "750",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "k=500",
+            "data": [
+              59.6,
+              100.0,
+              100.0
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=500 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1200",
+          "1500",
+          "1500",
+          "2000",
+          "2500"
+        ],
+        "datasets": [
+          {
+            "label": "k=1000",
+            "data": [
+              23068,
+              27772,
+              35098,
+              34814,
+              46596,
+              58752
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=1000 i\u00e7in Mesaj Say\u0131s\u0131 (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1200",
+          "1500",
+          "1500",
+          "2000",
+          "2500"
+        ],
+        "datasets": [
+          {
+            "label": "k=1000",
+            "data": [
+              181.72,
+              123.65,
+              231.22,
+              0.35,
+              492.62,
+              476.59
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=1000 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1200",
+          "1500",
+          "1500",
+          "2000",
+          "2500"
+        ],
+        "datasets": [
+          {
+            "label": "k=1000",
+            "data": [
+              63.9,
+              64.6,
+              100.0,
+              100.0,
+              100.0,
+              100.0
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=1000 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "2000"
+        ],
+        "datasets": [
+          {
+            "label": "k=1500",
+            "data": [
+              46712
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=1500 i\u00e7in Mesaj Say\u0131s\u0131 (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "2000"
+        ],
+        "datasets": [
+          {
+            "label": "k=1500",
+            "data": [
+              555.99
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=1500 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "2000"
+        ],
+        "datasets": [
+          {
+            "label": "k=1500",
+            "data": [
+              83.07
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "k=1500 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (n de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "n De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500"
+        ],
+        "datasets": [
+          {
+            "label": "n=500",
+            "data": [
+              11309
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=500 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500"
+        ],
+        "datasets": [
+          {
+            "label": "n=500",
+            "data": [
+              121.42
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=500 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500"
+        ],
+        "datasets": [
+          {
+            "label": "n=500",
+            "data": [
+              59.6
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=500 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500"
+        ],
+        "datasets": [
+          {
+            "label": "n=750",
+            "data": [
+              17136
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=750 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500"
+        ],
+        "datasets": [
+          {
+            "label": "n=750",
+            "data": [
+              84.53
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=750 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500"
+        ],
+        "datasets": [
+          {
+            "label": "n=750",
+            "data": [
+              100.0
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=750 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1000",
+            "data": [
+              23142,
+              23068
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1000 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1000",
+            "data": [
+              101.23,
+              181.72
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1000 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "500",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1000",
+            "data": [
+              100.0,
+              63.9
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1000 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1200",
+            "data": [
+              27772
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1200 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1200",
+            "data": [
+              123.65
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1200 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1200",
+            "data": [
+              64.6
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1200 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1500",
+            "data": [
+              35098,
+              34814
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1500 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1500",
+            "data": [
+              231.22,
+              0.35
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1500 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=1500",
+            "data": [
+              100.0,
+              100.0
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=1500 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1500"
+        ],
+        "datasets": [
+          {
+            "label": "n=2000",
+            "data": [
+              46596,
+              46712
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=2000 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1500"
+        ],
+        "datasets": [
+          {
+            "label": "n=2000",
+            "data": [
+              492.62,
+              555.99
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=2000 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000",
+          "1500"
+        ],
+        "datasets": [
+          {
+            "label": "n=2000",
+            "data": [
+              100.0,
+              83.07
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=2000 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=2500",
+            "data": [
+              58752
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=2500 i\u00e7in Mesaj Say\u0131s\u0131 (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Toplam Mesaj Say\u0131s\u0131"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=2500",
+            "data": [
+              476.59
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=2500 i\u00e7in \u00c7\u00f6z\u00fcmleme S\u00fcresi (s) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "\u00c7\u00f6z\u00fcmleme S\u00fcresi (saniye)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "type": "chartjs",
+    "data": {
+      "type": "line",
+      "data": {
+        "labels": [
+          "1000"
+        ],
+        "datasets": [
+          {
+            "label": "n=2500",
+            "data": [
+              100.0
+            ],
+            "borderColor": "#1f77b4",
+            "backgroundColor": "rgba(31, 119, 180, 0.2)",
+            "fill": true,
+            "tension": 0.3
+          }
+        ]
+      },
+      "options": {
+        "responsive": true,
+        "plugins": {
+          "title": {
+            "display": true,
+            "text": "n=2500 i\u00e7in Ba\u015far\u0131 Oran\u0131 (%) (k de\u011fi\u015fimi)"
+          }
+        },
+        "scales": {
+          "x": {
+            "title": {
+              "display": true,
+              "text": "k De\u011feri"
+            }
+          },
+          "y": {
+            "title": {
+              "display": true,
+              "text": "Ba\u015far\u0131 Oran\u0131 (%)"
+            },
+            "beginAtZero": false
+          }
+        }
+      }
+    }
+  }
+]
