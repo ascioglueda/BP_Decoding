@@ -6,7 +6,7 @@ from source import DawnSimVis
 
 SOURCE = 0
 k = 1000
-n = 1200
+n = 100
 
 message_count = 0
 start_time = time.time()

@@ -108,9 +108,10 @@ class Node(DawnSimVis.BaseNode):
         self.collected_messages = set()
         self.encode_count = 0
         self.sent_links = set()
-        self.neighbors = []  # ✅ Mutlaka tanımla
+        self.neighbors = []  #  Mutlaka tanımla
         self.log(f"Node {self.id} started in IDLE state.")
-
+        self.total_hops = 0
+        self.returned_packets = []  # sadece forwarded edilen (geri dönen) paketler için
 
     def distance_to(self, other):
         x1, y1 = self.pos
@@ -155,22 +156,25 @@ class Node(DawnSimVis.BaseNode):
                 'sender': self.id,
                 'indices': selected_indices,
                 'symbol': encoded_symbol,
-                'target': target_node
+                'target': target_node,
+                'hop_count':0
             }
             self.received_packets.append((selected_indices.copy(), encoded_symbol))
             self.set_timer(2 + self.encode_count * 0.01, self.send_encoded_packet, pck)
 
-        # 💡 Buraya ekle:
-        for _ in range(k):  # İstediğin kadar arttırabilirsin
-            indices, symbol = encode_lt(data, probabilities)
-            self.received_packets.append((indices, symbol))
+        # decode paketleri :
+        #for _ in range(k):  # İstediğin kadar arttırabilirsin
+            #indices, symbol = encode_lt(data, probabilities)
+            #self.received_packets.append((indices, symbol))
 
         total_encoding_time = 2 + (n - 1) * 0.01
         self.set_timer(total_encoding_time + 10, self.start_decoding)
 
     def start_decoding(self):
         self.log("Root node is starting global decoding...")
-        decode_lt(self.received_packets, k, data)
+        self.log(f"Root’a geri dönen toplam paket sayısı: {len(self.returned_packets)}")
+        self.log(f"Root’a gelen paketlerin toplam hops sayısı: {self.total_hops}")
+        decode_lt(self.returned_packets, k, data)
 
     def send_encoded_packet(self, pck):
         global message_count
@@ -224,16 +228,18 @@ class Node(DawnSimVis.BaseNode):
                         self.currstate = 'TERM'
                         self.set_timer(10, self.start_encoding)
         elif msg_type == 'encoded':
+            pck['hop_count'] += 1  # Tüm encoded mesajlar alındığında hop artmalı
+
             if self.id == SOURCE:
-                # Paket root'a ulaştı, decode için sakla
-                self.received_packets.append((pck['indices'], pck['symbol']))
-                self.log(f"Root received encoded packet back from node {sender_id}")
+                hop = pck.get('hop_count', -1)
+                #self.received_packets.append((pck['indices'], pck['symbol']))
+                self.returned_packets.append((pck['indices'], pck['symbol']))
+                self.total_hops += hop
+                self.log(f"Root received encoded packet back from node {sender_id} with hop count {hop}")
             else:
-                # Root değilse parent'a ilet
                 if self.parent is not None:
                     self.send(self.parent, pck)
-                    self.log(f"Node {self.id} forwarded encoded packet to parent {self.parent}")
-
+                    self.log(f"Node {self.id} forwarded encoded packet to parent {self.parent} with hop count {pck['hop_count']}")
 
     def finish(self):
         pass
