@@ -92,6 +92,19 @@ def decode_lt(received_packets, k, data):
         print(f"Çözülemeyen sembol indeksleri: {undecoded[:10]} ...")
     print(f"TÜM SEMBOLLERDEN COZUM: {correct_bits}/{k} bit doğru çözüldü (%{success_rate:.2f} başarı oranı)")
     print("=====================================================\n")
+    decode_time = time.time() - start_time
+    msg_complexity = n * np.log2(n)
+
+    # Başlık satırı yoksa oluştur
+    import os
+    csv_file = "decode_results.csv"
+    if not os.path.exists(csv_file):
+        with open(csv_file, "w") as f:
+            f.write("k,n,message_count,success_rate,decode_time,msg_complexity\n")
+
+    # Veriyi ekle
+    with open(csv_file, "a") as f:
+        f.write(f"{k},{n},{message_count},{success_rate:.2f},{decode_time:.2f},{msg_complexity:.2f}\n")
 
     return result
 
@@ -108,10 +121,9 @@ class Node(DawnSimVis.BaseNode):
         self.collected_messages = set()
         self.encode_count = 0
         self.sent_links = set()
-        self.neighbors = []  #  Mutlaka tanımla
+        self.neighbors = []  # ✅ Mutlaka tanımla
         self.log(f"Node {self.id} started in IDLE state.")
-        self.total_hops = 0
-        self.returned_packets = []  # sadece forwarded edilen (geri dönen) paketler için
+
 
     def distance_to(self, other):
         x1, y1 = self.pos
@@ -156,13 +168,12 @@ class Node(DawnSimVis.BaseNode):
                 'sender': self.id,
                 'indices': selected_indices,
                 'symbol': encoded_symbol,
-                'target': target_node,
-                'hop_count':0
+                'target': target_node
             }
             self.received_packets.append((selected_indices.copy(), encoded_symbol))
             self.set_timer(2 + self.encode_count * 0.01, self.send_encoded_packet, pck)
 
-        # decode paketleri :
+        
         #for _ in range(k):  # İstediğin kadar arttırabilirsin
             #indices, symbol = encode_lt(data, probabilities)
             #self.received_packets.append((indices, symbol))
@@ -172,9 +183,7 @@ class Node(DawnSimVis.BaseNode):
 
     def start_decoding(self):
         self.log("Root node is starting global decoding...")
-        self.log(f"Root’a geri dönen toplam paket sayısı: {len(self.returned_packets)}")
-        self.log(f"Root’a gelen paketlerin toplam hops sayısı: {self.total_hops}")
-        decode_lt(self.returned_packets, k, data)
+        decode_lt(self.received_packets, k, data)
 
     def send_encoded_packet(self, pck):
         global message_count
@@ -228,18 +237,16 @@ class Node(DawnSimVis.BaseNode):
                         self.currstate = 'TERM'
                         self.set_timer(10, self.start_encoding)
         elif msg_type == 'encoded':
-            pck['hop_count'] += 1  # Tüm encoded mesajlar alındığında hop artmalı
-
             if self.id == SOURCE:
-                hop = pck.get('hop_count', -1)
-                #self.received_packets.append((pck['indices'], pck['symbol']))
-                self.returned_packets.append((pck['indices'], pck['symbol']))
-                self.total_hops += hop
-                self.log(f"Root received encoded packet back from node {sender_id} with hop count {hop}")
+                # Paket root'a ulaştı, decode için sakla
+                self.received_packets.append((pck['indices'], pck['symbol']))
+                self.log(f"Root received encoded packet back from node {sender_id}")
             else:
+                # Root değilse parent'a ilet
                 if self.parent is not None:
                     self.send(self.parent, pck)
-                    self.log(f"Node {self.id} forwarded encoded packet to parent {self.parent} with hop count {pck['hop_count']}")
+                    self.log(f"Node {self.id} forwarded encoded packet to parent {self.parent}")
+
 
     def finish(self):
         pass
