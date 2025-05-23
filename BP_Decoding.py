@@ -120,6 +120,7 @@ class Node(DawnSimVis.BaseNode):
         self.hop_count_to_root = None
         if self.id == SOURCE:
             self.total_hops_list = []
+            
     # İki düğüm arasındaki mesafeyi hesaplar
     def distance_to(self, other):
         x1, y1 = self.pos
@@ -200,7 +201,7 @@ class Node(DawnSimVis.BaseNode):
             avg_hops = total_hops / len(hop_values) if hop_values else 0
 
             print(f"Root’a gelen paketlerin toplam hop sayısı: {total_hops}")
-            print(f"Ortalama hop sayısı: {avg_hops:.2f}")
+            #print(f"Ortalama hop sayısı: {avg_hops:.2f}")
 
             # HOP bilgilerini gönder
             decode_lt(self.received_packets, k, data, total_hops, avg_hops)
